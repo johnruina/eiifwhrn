@@ -1,4 +1,5 @@
 #include "shaderClass.h"
+#include "VBO.h"
 
 Shader::Shader(const char* vertexFile, const char* fragFile)
 {

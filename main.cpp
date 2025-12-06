@@ -1,15 +1,103 @@
 
 #include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
+#include<glad/glad.h>
+#include<GLFW/glfw3.h>
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+
+#include "Camera.h"
 #include "shaderClass.h"
 #include "Window.h"
+#include "VBO.h"
+#include "VAO.h"
+#include "EBO.h"
+#include "texture.h"
+#include "Material.h"
+#include "Keyboard.h"
 
-int WinMain() {
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
-    unsigned int height = 720;
-    unsigned int width =1280;
+unsigned int height = 720;
+unsigned int width = 1280;
+float lastX = width / 2.0f;
+float lastY = height / 2.0f;
+
+Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
+bool firstmouse = false;
+
+Keyboard keyboard;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        keyboard.KeyDown(key);
+    }
+    else if (action == GLFW_RELEASE) {
+        keyboard.KeyUp(key);
+    }
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+
+}
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+    glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_HIDDEN);
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstmouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstmouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
+    glfwSetCursorPos(window,width/2,height/2);
+
+    //lastX = xpos;
+    //lastY = ypos;
+}
+
+void ProcessInputs(GLFWwindow* window) {
+    
+    if (keyboard.IsKeyDown(GLFW_KEY_ESCAPE)) {
+        glfwSetWindowShouldClose(window, 1);
+    }
+
+    if (keyboard.IsKeyDown('W')) {
+        camera.position += camera.speed * camera.Front;
+    }
+    if (keyboard.IsKeyDown('S')) {
+        camera.position -= camera.speed * camera.Front;
+    }
+    if (keyboard.IsKeyDown('A')) {
+        camera.position -= camera.speed * camera.Right;
+    }
+    if (keyboard.IsKeyDown('D')) {
+        camera.position += camera.speed * camera.Right;
+    }
+    if (keyboard.IsKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+        camera.speed *= 1.005;
+    }
+    else {
+        camera.speed = camera.originalspeed;
+    }
+}
+
+int main() {
 
     glfwInit();
 
@@ -18,73 +106,111 @@ int WinMain() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLfloat vertices[] = {
-        0.0f,0.5f,0.0f,
-        0.5f,-0.5f,0.0f,
-        -0.5f,-0.5f,0.0f,
-        -0.25f,0.0f,0.0f,
-        0.0f,-0.5f,0.0f,
-        0.25f,0.0f,0.0f
+        -0.5f, 0.0f,0.5f, 0.6f, 0.15f,0.123f, 0.0f,0.0f,
+        -0.5f,0.0f,-0.5f, 0.2f,0.13f,0.35f, 0.0f,1.0f,
+        0.5f,0.0f,-0.5f, 0.16f,0.3f,0.6f, 1.0f,1.0f,
+        0.5f,0.0f,0.5f, 0.2f,0.25f,0.2f, 1.0f,0.0f,
+        0.0f,0.8f,0.0f, 0.2f,0.25f,0.4f, 1.0f,0.0f,
     };
 
     GLuint indices[] = {
-        0, 3,5,
-        1,4,5,
-        2,3,4
+        2,1,0,
+        3,2,0,
+        0,1,4,
+        1,2,4,
+        2,3,4,
+        3,0,4,
     };
 
-    GLFWwindow* window = glfwCreateWindow(width,height,"waddaup",NULL,NULL);
+
+    //WINDOW INITIALIZATION
+    GLFWwindow* window = glfwCreateWindow(width,height,"eiifwhrn",NULL,NULL);
     if (window == NULL) {
 
         glfwTerminate();
         throw -1;
     }
+
     glfwMakeContextCurrent(window);
 
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glEnable(GL_DEPTH_TEST);
+    glfwSwapInterval(1);
     gladLoadGL();
     glViewport(0, 0, width, height);
 
+    //
     Shader ShaderProgram("default.vert", "default.frag");
 
-    GLuint VBO,VAO,EBO;
-    glGenBuffers(1,&VBO);
-    glGenBuffers(1, &EBO);
-    glGenVertexArrays(1, &VAO);
+    VAO vao;
+    vao.Bind();
 
-    glBindVertexArray(VAO);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    VBO vbo(vertices, sizeof(vertices));
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*sizeof(float),(void*)0);
-    glEnableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    EBO ebo(indices, sizeof(indices));
+    vao.LinkVBO(vbo, 0, 3 , GL_FLOAT, 8* sizeof(float), (void*)0  );
+    vao.LinkVBO(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3*sizeof(float)) );
+    vao.LinkVBO(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+    vao.Unbind();
+    vbo.Unbind();
+
+
+    ebo.Unbind();
+
+    std::vector<std::string> faces = {
+        "right.jpg",
+        "left.jpg",
+        "top.jpg",
+        "bottom.jpg",
+        "front.jpg",
+        "back.jpg"
+    };
+
+    //TEXTURE
+
+    Texture testtex("testtexture.png", GL_TEXTURE_2D, GL_TEXTURE0,GL_RGBA,GL_UNSIGNED_BYTE);
+
+    testtex.texUnit(ShaderProgram, "tex0", 0);
+
+    Material testmaterial(glm::vec3(1.0f), { 0.5f,0.5f,0.5f }, { 1.0f,1.0f,1.0f }, 0.5f);
 
     while (!glfwWindowShouldClose(window))
-    {
-        //INPUT
+    {   
+
+        ProcessInputs(window);
+
+        camera.Matrix(90.0f, 0.05f, 200.0f, ShaderProgram, "camMatrix");
 
         //RENDER
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-    
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         ShaderProgram.Activate();
-        glBindVertexArray(VAO);
         
-        glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+        //mat
+
+        testmaterial.Bind(ShaderProgram);
+        testtex.Bind();
+
+        vao.Bind();
+        glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_LINES, sizeof(indices)/sizeof(int), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1,&VBO);
-    glDeleteBuffers(1, &EBO);
+    vao.Delete();
+    vbo.Delete();
+    ebo.Delete();
+    testtex.Delete();
+
     ShaderProgram.Delete();
 
 
