@@ -16,6 +16,7 @@
 #include "texture.h"
 #include "Material.h"
 #include "Keyboard.h"
+#include "TestObject.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -137,32 +138,18 @@ int main() {
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
+
+    gladLoadGL();
+
+    glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
     glfwSwapInterval(1);
-    gladLoadGL();
-    glViewport(0, 0, width, height);
-
     //
     Shader ShaderProgram("default.vert", "default.frag");
 
-    VAO vao;
-    vao.Bind();
+    Pyramid testobj({0.0f,0.0f,0.0f});
 
-    VBO vbo(vertices, sizeof(vertices));
-
-
-
-    EBO ebo(indices, sizeof(indices));
-    vao.LinkVBO(vbo, 0, 3 , GL_FLOAT, 8* sizeof(float), (void*)0  );
-    vao.LinkVBO(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3*sizeof(float)) );
-    vao.LinkVBO(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-
-    vao.Unbind();
-    vbo.Unbind();
-
-
-    ebo.Unbind();
-
+    /*
     std::vector<std::string> faces = {
         "right.jpg",
         "left.jpg",
@@ -171,6 +158,7 @@ int main() {
         "front.jpg",
         "back.jpg"
     };
+    */
 
     //TEXTURE
 
@@ -185,9 +173,16 @@ int main() {
 
         ProcessInputs(window);
 
-        camera.Matrix(90.0f, 0.05f, 200.0f, ShaderProgram, "camMatrix");
+        camera.Matrix(90.0f, 0.05f, 200.0f, ShaderProgram);
 
-        //RENDER
+        //RENDER SCENE
+
+        //SKYBOX
+
+
+
+        //SCENE
+
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -197,18 +192,17 @@ int main() {
 
         testmaterial.Bind(ShaderProgram);
         testtex.Bind();
+        //testtex.Unbind();
+        testobj.Render(ShaderProgram);
 
-        vao.Bind();
-        glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
-        glDrawElements(GL_LINES, sizeof(indices)/sizeof(int), GL_UNSIGNED_INT, 0);
+        //RENDER GUI
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    vao.Delete();
-    vbo.Delete();
-    ebo.Delete();
+    testobj.~Pyramid();
+    testobj2.~Pyramid();
     testtex.Delete();
 
     ShaderProgram.Delete();

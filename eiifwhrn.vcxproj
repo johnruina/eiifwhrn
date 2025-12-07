@@ -166,12 +166,15 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="3DMath.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="EBO.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="shaderClass.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="TestObject.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />
