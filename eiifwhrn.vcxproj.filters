@@ -103,6 +103,12 @@
     <None Include="skybox.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="terrain.frag">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="terrain.vert">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="testtexture.png">

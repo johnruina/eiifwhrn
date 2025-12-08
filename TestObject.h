@@ -46,6 +46,7 @@ public:
         vao.LinkVBO(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
         vao.LinkVBO(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
+
         vao.Unbind();
         vbo.Unbind();
 
@@ -53,7 +54,7 @@ public:
         ebo.Unbind();
 
         t = glm::mat4(1.0f);
-        t = glm::rotate(t, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        t = glm::translate(t,pos);
     }
 
     ~Pyramid() {
@@ -64,7 +65,7 @@ public:
 
 	void Render(Shader& ShaderProgram) {
         //t = glm::rotate(t, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        ShaderProgram.SetMat4("model", t);
+        ShaderProgram.SetMat4("modl", t);
 		vao.Bind();
 		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
 	}

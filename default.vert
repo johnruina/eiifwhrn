@@ -9,7 +9,7 @@ out vec2 texCoord;
 
 //out vec3 FragPos;
 
-uniform mat4 model;	
+uniform mat4 modl;	
 uniform mat4 view;
 uniform mat4 proj;
 
@@ -17,5 +17,5 @@ void main()
 {
    color = aColor;
    texCoord = aTex;
-   gl_Position = proj* view * model * vec4(aPos,1.0);
+   gl_Position = proj* view * modl * vec4(aPos,1);
 }

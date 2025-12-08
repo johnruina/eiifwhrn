@@ -1,12 +1,16 @@
 
+//OVERARCHING LIBRARIES
 #include <iostream>
+#include <vector>
+#include <random>
 
+//OPENGL LIBRARIES
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
-
+//MANMADE LIBRARIES
 #include "Camera.h"
 #include "shaderClass.h"
 #include "Window.h"
@@ -99,29 +103,11 @@ void ProcessInputs(GLFWwindow* window) {
 }
 
 int main() {
-
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLfloat vertices[] = {
-        -0.5f, 0.0f,0.5f, 0.6f, 0.15f,0.123f, 0.0f,0.0f,
-        -0.5f,0.0f,-0.5f, 0.2f,0.13f,0.35f, 0.0f,1.0f,
-        0.5f,0.0f,-0.5f, 0.16f,0.3f,0.6f, 1.0f,1.0f,
-        0.5f,0.0f,0.5f, 0.2f,0.25f,0.2f, 1.0f,0.0f,
-        0.0f,0.8f,0.0f, 0.2f,0.25f,0.4f, 1.0f,0.0f,
-    };
-
-    GLuint indices[] = {
-        2,1,0,
-        3,2,0,
-        0,1,4,
-        1,2,4,
-        2,3,4,
-        3,0,4,
-    };
 
 
     //WINDOW INITIALIZATION
@@ -143,11 +129,22 @@ int main() {
 
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glfwSwapInterval(1);
     //
     Shader ShaderProgram("default.vert", "default.frag");
+    
+    Pyramid testpyra({0.0f,0.0f,0.0f});
+    
+    std::vector<glm::mat4> pyramidmats = {};
 
-    Pyramid testobj({0.0f,0.0f,0.0f});
+    unsigned int amount = 2000;
+    for (int i = 0; i < amount; i++) {
+        glm::mat4 t = glm::mat4(1.0f);
+        t = glm::translate(t, { float(rand() % 300) / 10.0f,float(rand() % 300) / 10.0f ,float(rand() % 300) / 10.0f });
+        pyramidmats.push_back(t);
+    }
 
     /*
     std::vector<std::string> faces = {
@@ -193,7 +190,10 @@ int main() {
         testmaterial.Bind(ShaderProgram);
         testtex.Bind();
         //testtex.Unbind();
-        testobj.Render(ShaderProgram);
+        testpyra.Render(ShaderProgram);
+
+        //LEARN INSTANCING SOME OTHER DAY
+        //glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>( 18 ), GL_UNSIGNED_INT, 5, amount);
 
         //RENDER GUI
 
@@ -201,8 +201,8 @@ int main() {
         glfwPollEvents();
     }
 
-    testobj.~Pyramid();
-    testobj2.~Pyramid();
+    testpyra.~Pyramid();
+
     testtex.Delete();
 
     ShaderProgram.Delete();
