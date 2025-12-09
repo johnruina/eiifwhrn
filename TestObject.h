@@ -55,6 +55,7 @@ public:
 
         t = glm::mat4(1.0f);
         t = glm::translate(t,pos);
+        //t = glm::scale(t, {(rand()%5 + 1.0f) / 5.0f, (rand() % 5 + 1.0f)/5.0f ,float(rand() % 5 + 1.0f) / 5.0f });
     }
 
     ~Pyramid() {
@@ -64,7 +65,6 @@ public:
     }
 
 	void Render(Shader& ShaderProgram) {
-        //t = glm::rotate(t, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         ShaderProgram.SetMat4("modl", t);
 		vao.Bind();
 		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
