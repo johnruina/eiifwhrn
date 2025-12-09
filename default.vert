@@ -17,5 +17,5 @@ void main()
 {
    color = aColor;
    texCoord = aTex;
-   gl_Position = proj* view * modl * vec4(aPos,1);
+   gl_Position = proj* view * modl * vec4(aPos,1.0f);
 }
