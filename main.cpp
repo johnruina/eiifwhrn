@@ -1,5 +1,6 @@
 
 //OVERARCHING LIBRARIES
+#include <iostream>
 #include <vector>
 #include <random>
 
@@ -141,16 +142,16 @@ int main() {
     
     Shader ShaderProgram("default.vert", "default.frag");
     
-    Pyramid testpyra({0.0f,0.0f,0.0f});
+    Pyramid testpyra({0.0f,0.0f,-3.0f});
     
-/*
+
     std::vector<Pyramid> pyramids = {};
     unsigned int amount = 100;
     for (int i = 0; i < amount; i++) {
         Pyramid testpyra({ float(rand() % 100) / 10.0f,float(rand() % 100) / 10.0f ,float(rand() % 100) / 10.0f });
         pyramids.push_back(testpyra);
     }
-*/
+
     /*
     std::vector<std::string> faces = {
         "right.jpg",
@@ -164,11 +165,11 @@ int main() {
 
     //TEXTURE
 
-    //Texture testtex("testtexture.png", GL_TEXTURE_2D, GL_TEXTURE0,GL_RGBA,GL_UNSIGNED_BYTE);
+    Texture testtex("testtexture.png", GL_TEXTURE_2D, GL_TEXTURE0,GL_RGBA,GL_UNSIGNED_BYTE);
 
-    //testtex.texUnit(ShaderProgram, "tex0", 0);
+    testtex.texUnit(ShaderProgram, "tex0", 0);
 
-    //Material testmaterial(glm::vec3(1.0f), { 0.5f,0.5f,0.5f }, { 1.0f,1.0f,1.0f }, 0.5f);
+    Material testmaterial(glm::vec3(1.0f), { 0.5f,0.5f,0.5f }, { 1.0f,1.0f,1.0f }, 0.5f);
 
     while (!glfwWindowShouldClose(window))
     {   
@@ -192,15 +193,15 @@ int main() {
         
         //mat
 
-        //testmaterial.Bind(ShaderProgram);
-        //testtex.Bind();
+        testmaterial.Bind(ShaderProgram);
+        testtex.Bind();
         //testtex.Unbind();
         testpyra.Render(ShaderProgram);
-        /*
+        
         for (Pyramid pyra : pyramids) {
             pyra.Render(ShaderProgram);
         }
-        */
+        
         //LEARN INSTANCING SOME OTHER DAY
         //glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>( 18 ), GL_UNSIGNED_INT, 5, amount);
 
