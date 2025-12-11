@@ -22,6 +22,7 @@
 #include "Material.h"
 #include "Keyboard.h"
 #include "TestObject.h"
+#include "Cube.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -31,7 +32,7 @@ unsigned int width = 1280;
 float lastX = width / 2.0f;
 float lastY = height / 2.0f;
 
-Camera camera(width, height, glm::vec3(0.0f, 0.0f, 4.0f));
+Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 bool firstmouse = false;
 
 Keyboard keyboard;
@@ -111,46 +112,36 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-
     //WINDOW INITIALIZATION
-    GLFWwindow* window = glfwCreateWindow(width,height,"eiifwhrn",NULL,NULL);
+    GLFWwindow* window = glfwCreateWindow(width, height, "eiifwhrn", NULL, NULL);
     if (window == NULL) {
 
         glfwTerminate();
-        throw -1;
+        throw - 1;
     }
 
-    glfwMakeContextCurrent(window);
 
+    glfwMakeContextCurrent(window);
+    gladLoadGL();
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
-
-    gladLoadGL();
-
-    glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
+    glfwSwapInterval(1);
+    glViewport(0, 0, width, height);
+
     //glEnable(GL_BLEND);
     //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_FRONT);
     //glFrontFace(GL_CCW);
-
-    glfwSwapInterval(1);
     
     Shader ShaderProgram("default.vert", "default.frag");
     
-    Pyramid testpyra({0.0f,0.0f,-3.0f});
-    
-
-    std::vector<Pyramid> pyramids = {};
-    unsigned int amount = 100;
-    for (int i = 0; i < amount; i++) {
-        Pyramid testpyra({ float(rand() % 100) / 10.0f,float(rand() % 100) / 10.0f ,float(rand() % 100) / 10.0f });
-        pyramids.push_back(testpyra);
-    }
+    std::vector<Cube> cubes;
+    cubes.push_back(Cube());
 
     /*
     std::vector<std::string> faces = {
@@ -171,14 +162,52 @@ int main() {
 
     Material testmaterial(glm::vec3(1.0f), { 0.5f,0.5f,0.5f }, { 1.0f,1.0f,1.0f }, 0.5f);
 
+    unsigned long int frame = 0;
     while (!glfwWindowShouldClose(window))
     {   
+        //START OF FRAME
+        frame++;
 
+        //INPUTS
         ProcessInputs(window);
 
-        camera.Matrix(90.0f, 0.05f, 200.0f, ShaderProgram);
+        //WORLD STUFF
+        
+        if (frame % 20 == 0) {
+            
+            unsigned int whichdir = rand() % 6;
 
+            glm::vec3 poschange(0.0f);
+            switch (whichdir) {
+            case 0:
+                poschange.x = 1.0f;
+                break;
+            case 1:
+                poschange.x = -1.0f;
+                break;
+            case 2:
+                poschange.y = 1.0f;
+                break;
+            case 3:
+                poschange.y = -1.0f;
+                break;
+            case 4:
+                poschange.z = 1.0f;
+                break;
+            case 5:
+                poschange.z = -1.0f;
+                break;
+            }
+
+
+            Cube newcube;
+            newcube.Translate(poschange);
+            cubes.push_back(newcube);
+        }
+        
         //RENDER SCENE
+
+        camera.Matrix(90.0f, 0.05f, 200.0f, ShaderProgram);
 
         //SKYBOX
 
@@ -196,11 +225,12 @@ int main() {
         testmaterial.Bind(ShaderProgram);
         testtex.Bind();
         //testtex.Unbind();
-        testpyra.Render(ShaderProgram);
         
-        for (Pyramid pyra : pyramids) {
-            pyra.Render(ShaderProgram);
+        for (Cube cube : cubes) {
+            //std::cout << cube.GetPosition()[0] << " " << cube.GetPosition()[1] << " " << cube.GetPosition()[2] << "\n";
+            cube.Render(ShaderProgram);
         }
+
         
         //LEARN INSTANCING SOME OTHER DAY
         //glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>( 18 ), GL_UNSIGNED_INT, 5, amount);
@@ -211,13 +241,6 @@ int main() {
         glfwPollEvents();
     }
 
-    /*
-    for (Pyramid pyra : pyramids) {
-        pyra.~Pyramid();
-    }
-    */
-    
-    testpyra.~Pyramid();
 
     //testtex.Delete();
 

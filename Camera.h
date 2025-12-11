@@ -77,7 +77,7 @@ private:
 		Front = glm::normalize(front);
 		Right = glm::normalize(glm::cross(front, worldUp));
 		Up = glm::normalize(glm::cross(front, Right));
-		std::cout << std::to_string(Front[0]) << " " << std::to_string(Front[1]) << " " << std::to_string(Front[2]) << '\n';
+		//std::cout << std::to_string(Front[0]) << " " << std::to_string(Front[1]) << " " << std::to_string(Front[2]) << '\n';
 	}
 };
 

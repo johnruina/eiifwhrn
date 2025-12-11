@@ -33,21 +33,20 @@ GLuint indices[] = {
 class Pyramid {
 
 public:
-    VAO vao;
+    
     VBO vbo;
     EBO ebo;
 
-    Pyramid(glm::vec3 pos) : vao(), vbo(vertices, sizeof(vertices)),
+    Pyramid(glm::vec3 pos) : vbo(vertices, sizeof(vertices)),
     ebo(indices, sizeof(indices))
     {
-        vao.Bind();
 
-        vao.LinkVBO(vbo, 0, 3, GL_FLOAT, 8 * sizeof(float), (void*)0);
-        vao.LinkVBO(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        vao.LinkVBO(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        VBO vbo(vertices, sizeof(vertices));
 
 
-        vao.Unbind();
+
+        EBO ebo(indices, sizeof(indices));
+
         vbo.Unbind();
 
         ebo.Unbind();
@@ -59,16 +58,28 @@ public:
     }
 
     ~Pyramid() {
-        vao.Delete();
         vbo.Delete();
         ebo.Delete();
     }
 
-	void Render(Shader& ShaderProgram) {
+    void Render(Shader& ShaderProgram, VAO vao) {
         //t = glm::rotate(t, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         ShaderProgram.SetMat4("modl", t);
 		vao.Bind();
+        ebo.Bind();
+        vbo.Bind();
+
+        vao.LinkVBO(vbo, 0, 3, GL_FLOAT, 8 * sizeof(float), (void*)0);
+        vao.LinkVBO(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        vao.LinkVBO(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
 		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
+        vao.Unbind();
+
+        vbo.Unbind();
+
+
+        ebo.Unbind();
 	}
 private:
     glm::mat4 t;

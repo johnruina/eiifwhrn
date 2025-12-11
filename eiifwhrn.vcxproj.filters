@@ -1,115 +1,47 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="Resource Files\Shaders">
-      <UniqueIdentifier>{71bdbbf1-620b-48d4-b55a-1ee2dc8aa7d5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resource Files\Textures">
-      <UniqueIdentifier>{2a5e0ee5-653a-4c13-ae8c-fe98898d20a4}</UniqueIdentifier>
-    </Filter>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="EBO.cpp" />
+    <ClCompile Include="glad.c" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="shaderClass.cpp" />
+    <ClCompile Include="texture.cpp" />
+    <ClCompile Include="VAO.cpp" />
+    <ClCompile Include="VBO.cpp" />
+    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="shaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VBO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="EBO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="VAO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="texture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="EBO.h" />
+    <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="Material.h" />
+    <ClInclude Include="shaderClass.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="texture.h" />
+    <ClInclude Include="VAO.h" />
+    <ClInclude Include="VBO.h" />
+    <ClInclude Include="Window.h" />
+    <ClInclude Include="TestObject.h" />
+    <ClInclude Include="Object.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Cube.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shaderClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VBO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="EBO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VAO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stb_image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Material.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Keyboard.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TestObject.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Object.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <Image Include="testtexture.png" />
+    <Image Include="back.jpg" />
+    <Image Include="bottom.jpg" />
+    <Image Include="front.jpg" />
+    <Image Include="right.jpg" />
+    <Image Include="left.jpg" />
+    <Image Include="top.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="default.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="default.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="skybox.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="skybox.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="terrain.frag">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-    <None Include="terrain.vert">
-      <Filter>Resource Files\Shaders</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="testtexture.png">
-      <Filter>Resource Files\Textures</Filter>
-    </Image>
+    <None Include="default.frag" />
+    <None Include="default.vert" />
+    <None Include="skybox.frag" />
+    <None Include="skybox.vert" />
+    <None Include="terrain.frag" />
+    <None Include="terrain.vert" />
   </ItemGroup>
 </Project>
