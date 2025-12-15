@@ -12,8 +12,9 @@
 #include "VBO.h"
 #include "EBO.h"
 #include "shaderClass.h"
+#include "Mesh.h"
 
-GLfloat vertices[] = {
+std::vector<GLfloat>  pyramidvertices = {
 -0.5f, 0.0f,0.5f, 0.6f, 0.15f,0.123f, 0.0f,0.0f,
 -0.5f,0.0f,-0.5f, 0.2f,0.13f,0.35f, 0.0f,1.0f,
 0.5f,0.0f,-0.5f, 0.16f,0.3f,0.6f, 1.0f,1.0f,
@@ -21,7 +22,7 @@ GLfloat vertices[] = {
 0.0f,0.8f,0.0f, 0.2f,0.25f,0.4f, 1.0f,0.0f,
 };
 
-GLuint indices[] = {
+std::vector<GLuint> pyramidindices= {
     2,1,0,
     3,2,0,
     0,1,4,
@@ -30,57 +31,9 @@ GLuint indices[] = {
     3,0,4,
 };
 
-class Pyramid {
+class Pyramid  : public Mesh {
 
 public:
-    
-    VBO vbo;
-    EBO ebo;
-
-    Pyramid(glm::vec3 pos) : vbo(vertices, sizeof(vertices)),
-    ebo(indices, sizeof(indices))
-    {
-
-        VBO vbo(vertices, sizeof(vertices));
-
-
-
-        EBO ebo(indices, sizeof(indices));
-
-        vbo.Unbind();
-
-        ebo.Unbind();
-
-        t = glm::mat4(1.0f);
-        t = glm::translate(t,pos);
-        //t = glm::scale(t, {(rand()%5 + 1.0f) / 5.0f, (rand() % 5 + 1.0f)/5.0f ,float(rand() % 5 + 1.0f) / 5.0f });
-        std::cout << std::to_string(t[3][0]) << " " << std::to_string(t[3][1]) << " " << std::to_string(t[3][2]) << '\n';
-    }
-
-    ~Pyramid() {
-        vbo.Delete();
-        ebo.Delete();
-    }
-
-    void Render(Shader& ShaderProgram, VAO vao) {
-        //t = glm::rotate(t, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        ShaderProgram.SetMat4("modl", t);
-		vao.Bind();
-        ebo.Bind();
-        vbo.Bind();
-
-        vao.LinkVBO(vbo, 0, 3, GL_FLOAT, 8 * sizeof(float), (void*)0);
-        vao.LinkVBO(vbo, 1, 3, GL_FLOAT, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        vao.LinkVBO(vbo, 2, 2, GL_FLOAT, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-
-		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(int), GL_UNSIGNED_INT, 0);
-        vao.Unbind();
-
-        vbo.Unbind();
-
-
-        ebo.Unbind();
-	}
+    Pyramid() : Mesh(pyramidvertices, pyramidindices) {};
 private:
-    glm::mat4 t;
 };

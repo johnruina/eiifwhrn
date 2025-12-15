@@ -175,6 +175,7 @@
     <ClInclude Include="Object.h" />
     <ClInclude Include="shaderClass.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="t.h" />
     <ClInclude Include="TestObject.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="VAO.h" />

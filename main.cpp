@@ -111,6 +111,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 4); 
 
     //WINDOW INITIALIZATION
     GLFWwindow* window = glfwCreateWindow(width, height, "eiifwhrn", NULL, NULL);
@@ -131,15 +132,28 @@ int main() {
     glfwSwapInterval(1);
     glViewport(0, 0, width, height);
 
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_MULTISAMPLE);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_FRONT);
-    //glFrontFace(GL_CCW);
+    glFrontFace(GL_CCW);
     
     Shader ShaderProgram("default.vert", "default.frag");
     
+    std::vector<Pyramid> pyramids = {};
+
+    unsigned int amount = 1000;
+    for (int i = 0; i < amount; i++) {
+        Pyramid testpyra;
+        testpyra.TranslateBy({ float(rand() % 100) / 10.0f,float(rand() % 100) / 10.0f ,float(rand() % 100) / 10.0f });
+        pyramids.push_back(testpyra);
+    }
+
+
+    Pyramid testpyra;
     std::vector<Cube> cubes;
     cubes.push_back(Cube());
 
@@ -156,13 +170,15 @@ int main() {
 
     //TEXTURE
 
-    Texture testtex("testtexture.png", GL_TEXTURE_2D, GL_TEXTURE0,GL_RGBA,GL_UNSIGNED_BYTE);
+    Texture testtex("testtexture.png", GL_TEXTURE_2D, GL_TEXTURE0,GL_RGB,GL_UNSIGNED_BYTE);
 
     testtex.texUnit(ShaderProgram, "tex0", 0);
 
     Material testmaterial(glm::vec3(1.0f), { 0.5f,0.5f,0.5f }, { 1.0f,1.0f,1.0f }, 0.5f);
 
     unsigned long int frame = 0;
+    unsigned long prev = 0;
+
     while (!glfwWindowShouldClose(window))
     {   
         //START OF FRAME
@@ -172,37 +188,55 @@ int main() {
         ProcessInputs(window);
 
         //WORLD STUFF
-        
-        if (frame % 20 == 0) {
-            
-            unsigned int whichdir = rand() % 6;
+        unsigned int onceeveryframes = 1;
+        unsigned int timestogen = 1;
+        if (frame % onceeveryframes == 0) {
 
-            glm::vec3 poschange(0.0f);
-            switch (whichdir) {
-            case 0:
-                poschange.x = 1.0f;
-                break;
-            case 1:
-                poschange.x = -1.0f;
-                break;
-            case 2:
-                poschange.y = 1.0f;
-                break;
-            case 3:
-                poschange.y = -1.0f;
-                break;
-            case 4:
-                poschange.z = 1.0f;
-                break;
-            case 5:
-                poschange.z = -1.0f;
-                break;
+            for (int i = 0; i < timestogen; i++) {
+             
+
+                if (cubes.size() > 2000) {
+                    cubes.erase(cubes.begin());
+                }
+
+                unsigned int whichdir = rand() % 5;
+
+                if (whichdir >= prev) {
+                    whichdir++;
+                }
+
+                glm::vec3 poschange(0.0f);
+                switch (whichdir) {
+                case 0:
+                    poschange.x = 2.0f;
+                    break;
+                case 1:
+                    poschange.x = -2.0f;
+                    break;
+                case 2:
+                    poschange.y = 2.0f;
+                    break;
+                case 3:
+                    poschange.y = -2.0f;
+                    break;
+                case 4:
+                    poschange.z = 2.0f;
+                    break;
+                case 5:
+                    poschange.z = -2.0f;
+                    break;
+                }
+
+                prev = whichdir;
+                Cube newcube;
+                newcube.TranslateBy(cubes[cubes.size() - 1].GetPosition() + poschange);
+                cubes.push_back(newcube);
+
             }
+        }
 
-
-            Cube newcube;
-            newcube.Translate(poschange);
-            cubes.push_back(newcube);
+        for (Cube cu : cubes) {
+            
         }
         
         //RENDER SCENE
@@ -225,10 +259,12 @@ int main() {
         testmaterial.Bind(ShaderProgram);
         testtex.Bind();
         //testtex.Unbind();
-        
+        testpyra.Render(ShaderProgram);
         for (Cube cube : cubes) {
-            //std::cout << cube.GetPosition()[0] << " " << cube.GetPosition()[1] << " " << cube.GetPosition()[2] << "\n";
             cube.Render(ShaderProgram);
+        }
+        for (Pyramid pyra : pyramids) {
+            pyra.Render(ShaderProgram);
         }
 
         

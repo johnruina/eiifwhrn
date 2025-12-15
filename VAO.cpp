@@ -4,6 +4,7 @@
 VAO::VAO()
 {
 	glGenVertexArrays(1, &ID);
+	glBindVertexArray(ID);
 }
 
 void VAO::LinkVBO(VBO& vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset) {

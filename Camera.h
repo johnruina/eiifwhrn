@@ -38,7 +38,7 @@ public:
 		glm::mat4 view = glm::mat4(1.0f);
 		glm::mat4 proj = glm::mat4(1.0f);
 		view = glm::lookAt(position, position + Front, glm::vec3(0.0f, 1.0f, 0.0f));
-		proj = glm::perspective(glm::radians(FOVdeg), (float)(width / height), nearPlane, farPlane);
+		proj = glm::perspective(glm::radians(FOVdeg), ((float)width / (float)height), nearPlane, farPlane);
 		shader.SetMat4("proj", proj);
 		shader.SetMat4("view", view);
 	};
