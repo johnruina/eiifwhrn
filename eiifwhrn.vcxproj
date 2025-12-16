@@ -183,6 +183,8 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="instancedcubes.frag" />
+    <None Include="instancedcubes.vert" />
     <None Include="default.frag" />
     <None Include="default.vert" />
     <None Include="skybox.frag" />

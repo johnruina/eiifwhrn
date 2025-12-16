@@ -36,11 +36,13 @@ public:
 	}
 
 	void ScaleTo(glm::vec3 e) noexcept {
-
+		ScaleBy(glm::vec3(1.0f) / GetScale());
+		ScaleBy(e);
 	}
 
 	void ScaleTo(GLfloat e) noexcept {
-
+		ScaleBy(glm::vec3(1.0f) / GetScale());
+		ScaleBy(e);
 	}
 
 	void SetMatrix(glm::mat4 newt) noexcept {
