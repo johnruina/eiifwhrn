@@ -1,8 +1,7 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec3 color;
-
+in vec3 normal;
 in vec2 texCoord;
 
 struct Material {
@@ -17,7 +16,9 @@ uniform sampler2D tex0;
 
 void main()
 {
-    vec4 lightless = (texture(tex0,texCoord)) * vec4(color,1.0f);
+    vec4 lightless = texture(tex0,texCoord);
+
+    //vec4 lightless = vec4(1.0f);
 
     //vec4 ambient = lightless * vec4(material.ambient,1.0f);
 

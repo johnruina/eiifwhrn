@@ -21,7 +21,6 @@
 #include "texture.h"
 #include "Material.h"
 #include "Keyboard.h"
-#include "TestObject.h"
 #include "Cube.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -143,17 +142,6 @@ int main() {
     
     Shader ShaderProgram("default.vert", "default.frag");
     
-    std::vector<Pyramid> pyramids = {};
-
-    unsigned int amount = 1000;
-    for (int i = 0; i < amount; i++) {
-        Pyramid testpyra;
-        testpyra.TranslateBy({ float(rand() % 100) / 10.0f,float(rand() % 100) / 10.0f ,float(rand() % 100) / 10.0f });
-        pyramids.push_back(testpyra);
-    }
-
-
-    Pyramid testpyra;
     std::vector<Cube> cubes;
     cubes.push_back(Cube());
 
@@ -259,14 +247,10 @@ int main() {
         testmaterial.Bind(ShaderProgram);
         testtex.Bind();
         //testtex.Unbind();
-        testpyra.Render(ShaderProgram);
+
         for (Cube cube : cubes) {
             cube.Render(ShaderProgram);
         }
-        for (Pyramid pyra : pyramids) {
-            pyra.Render(ShaderProgram);
-        }
-
         
         //LEARN INSTANCING SOME OTHER DAY
         //glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>( 18 ), GL_UNSIGNED_INT, 5, amount);

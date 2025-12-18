@@ -1,13 +1,26 @@
+#ifndef CUBE_CLASS_H
+#define CUBE_CLASS_H
 
-static std::vector<GLfloat> cubevertices = {
-1.0f,1.0f,-1.0f, 0.6f, 0.15f,0.123f, 0.0f,0.0f,
--1.0f,1.0f,-1.0f, 0.2f,0.13f,0.35f, 0.0f,1.0f,
--1.0f,1.0f,1.0f, 0.16f,0.3f,0.6f, 1.0f,1.0f,
-1.0f,1.0f,1.0f, 0.2f,0.25f,0.2f, 1.0f,0.0f,
-1.0f,-1.0f,-1.0f, 0.6f, 0.15f,0.123f, 0.0f,0.0f,
--1.0f,-1.0f,-1.0f, 0.2f,0.13f,0.35f, 0.0f,1.0f,
--1.0f,-1.0f,1.0f, 0.16f,0.3f,0.6f, 1.0f,1.0f,
-1.0f,-1.0f,1.0f, 0.2f,0.25f,0.2f, 1.0f,0.0f,
+
+#include <vector>
+
+#include<glad/glad.h>
+#include<GLFW/glfw3.h>
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+
+#include "Mesh.h"
+
+static std::vector<Vertex> cubevertices = {
+	{{1.0f,1.0f,-1.0f}, {0.6f, 0.15f,0.123f}, {0.0f,0.0f}},
+	{{-1.0f,1.0f,-1.0f}, {0.2f,0.13f,0.35f}, {0.0f,1.0f} },
+{{-1.0f,1.0f,1.0f}, {0.16f,0.3f,0.6f}, {1.0f,1.0f} },
+	{{1.0f,1.0f,1.0f}, {0.2f,0.25f,0.2f}, {1.0f,0.0f }},
+{{1.0f,-1.0f,-1.0f}, {0.6f, 0.15f,0.123f}, {0.0f,0.0f} },
+{{-1.0f,-1.0f,-1.0f},{ 0.2f,0.13f,0.35f}, {0.0f,1.0f}},
+{{-1.0f,-1.0f,1.0f}, {0.16f,0.3f,0.6f}, {1.0f,1.0f} },
+{{1.0f,-1.0f,1.0f}, {0.2f,0.25f,0.2f}, {1.0f,0.0f} },
 };
 
 static std::vector<GLuint> cubeindices = {
@@ -24,19 +37,6 @@ static std::vector<GLuint> cubeindices = {
 5,6,7,
 4,5,7
 };
-
-#ifndef CUBE_CLASS_H
-#define CUBE_CLASS_H
-
-#include <vector>
-
-#include<glad/glad.h>
-#include<GLFW/glfw3.h>
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-
-#include "Mesh.h"
 
 class Cube : public Mesh {
 
