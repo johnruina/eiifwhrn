@@ -25,9 +25,6 @@ public:
 	glm::vec3 Right;
 	glm::vec3 Up;
 
-	//PLACEHOLDER TILL I MAKE A KEYBOARD SYSTEM OR SMTH
-	bool FirstTab = true;
-
 	const float originalspeed = 0.01f;
 	float speed = 0.1f;
 	float sensitivity = 0.1f;
@@ -41,6 +38,7 @@ public:
 		proj = glm::perspective(glm::radians(FOVdeg), ((float)width / (float)height), nearPlane, farPlane);
 		shader.SetMat4("proj", proj);
 		shader.SetMat4("view", view);
+		shader.Set3F("viewPos", position);
 	};
 
 	void SetPosition(glm::vec3 nposition) {

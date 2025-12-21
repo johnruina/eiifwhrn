@@ -22,6 +22,8 @@
 #include "Material.h"
 #include "Keyboard.h"
 #include "Cube.h"
+#include "Model.h"
+#include "DirLight.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -142,8 +144,14 @@ int main() {
     
     Shader ShaderProgram("default.vert", "default.frag");
     
-    std::vector<Cube> cubes;
-    cubes.push_back(Cube());
+    //LIGHTING
+
+    DirLight MainDirLight(glm::vec3(0.5f), glm::vec3(0.5f), glm::vec3(0.5f), glm::vec3(0.0f,-1.0f,1.0f));
+
+    //
+
+    std::vector<Model> cubes;
+    cubes.push_back(Model("cratelookingthing.obj"));
 
     /*
     std::vector<std::string> faces = {
@@ -155,6 +163,9 @@ int main() {
         "back.jpg"
     };
     */
+    
+    Model testobj("gun2.obj");
+    Model terrain("terrain.obj");
 
     //TEXTURE
 
@@ -162,11 +173,19 @@ int main() {
 
     testtex.texUnit(ShaderProgram, "tex0", 0);
 
-    Material testmaterial(glm::vec3(1.0f), { 0.5f,0.5f,0.5f }, { 1.0f,1.0f,1.0f }, 0.5f);
+    Texture metaltex("metaltex.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGB, GL_UNSIGNED_BYTE);
+
+    metaltex.texUnit(ShaderProgram, "tex0", 0);
+
+    Material testmaterial(glm::vec3(0.5f), { 0.5f,0.5f,0.5f }, { 1.0f,1.0f,1.0f }, 0.5f);
 
     unsigned long int frame = 0;
     unsigned long prev = 0;
 
+    //DEBUG/SHORTSTAY STUFF ONLY
+
+
+    //LOOP
     while (!glfwWindowShouldClose(window))
     {   
         //START OF FRAME
@@ -175,7 +194,7 @@ int main() {
         //INPUTS
         ProcessInputs(window);
 
-        //WORLD STUFF
+        //GAME LOGIC
         unsigned int onceeveryframes = 1;
         unsigned int timestogen = 1;
         if (frame % onceeveryframes == 0) {
@@ -216,29 +235,35 @@ int main() {
                 }
 
                 prev = whichdir;
-                Cube newcube;
+                Model newcube("cratelookingthing.obj");
                 newcube.TranslateBy(cubes[cubes.size() - 1].GetPosition() + poschange);
+                newcube.ScaleTo(0.5f);
                 cubes.push_back(newcube);
 
             }
         }
 
-        for (Cube cu : cubes) {
-            
-        }
+        glm::vec3 np = camera.position + camera.Front * 0.75f + camera.Right * 0.5f + camera.Up * 0.5f;
+        testobj.TranslateTo(np);
+
         
         //RENDER SCENE
+        
+        //IMPORTANT
+        glClearColor(212./255., 223. / 255., 232. / 255.,1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         camera.Matrix(90.0f, 0.05f, 200.0f, ShaderProgram);
+        
+        //LIGHTING STUFF
+
+        MainDirLight.Bind(ShaderProgram);
 
         //SKYBOX
 
 
 
         //SCENE
-
-        glClearColor(212./255., 223. / 255., 232. / 255.,1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ShaderProgram.Activate();
         
@@ -248,7 +273,11 @@ int main() {
         testtex.Bind();
         //testtex.Unbind();
 
-        for (Cube cube : cubes) {
+        terrain.Render(ShaderProgram);
+        metaltex.Bind();
+        testobj.Render(ShaderProgram);
+        testtex.Bind();
+        for (Model cube : cubes) {
             cube.Render(ShaderProgram);
         }
         

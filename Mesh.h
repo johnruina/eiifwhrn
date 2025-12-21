@@ -10,10 +10,6 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
-#include <assimp/ai_assert.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 
 #include "VAO.h"
 #include "VBO.h"
@@ -35,7 +31,7 @@ public:
 		vertices(meshvertices),
 		indices(meshindices),
 		vao(),
-		vbo(&vertices[0], vertices.size() * sizeof(GLfloat)),
+		vbo(&vertices[0], vertices.size() * sizeof(Vertex)),
 		ebo(&indices[0], indices.size() * sizeof(GLuint))
 	{
 
@@ -54,6 +50,11 @@ public:
 
 		SetMatrix( glm::mat4(1.0f) );
 	};
+
+	void Clear() {
+		vertices = std::vector<Vertex>();
+		indices = std::vector<GLuint>();
+	}
 
 	virtual void Render(Shader ShaderProgram) {
 		glm::mat4 topass = GetMatrix();

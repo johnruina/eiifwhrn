@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MATERIAL_CLASS
+#define MATERIAL_CLASS
 
 #include "shaderClass.h"
 
@@ -35,3 +36,5 @@ public:
 private:
 
 };
+
+#endif
