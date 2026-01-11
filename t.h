@@ -15,58 +15,95 @@ class t_package {
 
 public:
 
-
+	t_package() {
+		pos = glm::vec3(0.0f);
+		scale = glm::vec3(1.0f);
+		orient = glm::quat();
+	}
 
 	void TranslateBy(glm::vec3 e) noexcept {
-		t = glm::translate(t, e);
+		pos += e;
 	}
 
 	void TranslateTo(glm::vec3 e) noexcept {
-		t[3][0] = e.x;
-		t[3][1] = e.y;
-		t[3][2] = e.z;
+		pos = e;
 	}
 
 	void ScaleBy(glm::vec3 e) noexcept {
-		t = glm::scale(t, e);
+		scale += e;
 	}
 
 	void ScaleBy(GLfloat e) noexcept {
-		t = glm::scale(t, glm::vec3(e));
+		scale += glm::vec3(e);
 	}
 
 	void ScaleTo(glm::vec3 e) noexcept {
-		ScaleBy(glm::vec3(1.0f) / GetScale());
-		ScaleBy(e);
+		scale = e;
 	}
 
 	void ScaleTo(GLfloat e) noexcept {
-		ScaleBy(glm::vec3(1.0f) / GetScale());
-		ScaleBy(e);
+		scale = glm::vec3(e);
 	}
 
-	void SetMatrix(glm::mat4 newt) noexcept {
-		t = newt;
+	void RotateToQuaternion(glm::quat q) noexcept {
+		orient = q;
 	}
 
-	glm::vec3 GetScale() noexcept {
-		glm::vec3 size;
-		size.x = glm::length(glm::vec3(t[0])); // Basis vector X
-		size.y = glm::length(glm::vec3(t[1])); // Basis vector Y
-		size.z = glm::length(glm::vec3(t[2])); // Basis vector Z
-		return size;
+	void RotateByQuaternion(glm::quat q) noexcept {
+		orient = orient* q;
 	}
 
-	glm::vec3 GetPosition() const noexcept {
-		return { t[3][0],t[3][1] ,t[3][2] };
+	void RotateByEulerAngles(glm::vec3 e) noexcept {
+		RotateByQuaternion(glm::quat(e));
+	}
+
+	void LookAt(glm::vec3 pos) noexcept {
+
+	}
+
+	glm::vec3 GetUpVector() const noexcept {
+
+	}
+
+	glm::vec3 GetRightVector() const noexcept {
+
+	}
+
+	glm::vec3 GetFrontVector() const noexcept {
+
+
+	}
+
+	glm::vec3 GetScale() const noexcept {
+		return scale;
+	}
+
+	glm::vec3 GetTranslation() const noexcept {
+		return pos;
 	};
 
+	glm::quat GetRotation() const noexcept {
+		return orient;
+	}
+
+	void CopyMatrixTo(t_package& target) const noexcept {
+
+		target.scale = scale;
+		target.orient = orient;
+		target.pos = pos;
+	}
+
 	glm::mat4 GetMatrix() const noexcept {
-		return t;
+		glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), scale);
+		glm::mat4 rotMat = glm::mat4_cast(orient);
+		glm::mat4 translMat = glm::translate(glm::mat4(1.0f), pos);
+		return translMat * rotMat * scaleMat;
 	}
 
 private:
-	glm::mat4 t;
+	glm::vec3 pos;
+	glm::vec3 scale;
+	glm::quat orient;
 };
 
 #endif

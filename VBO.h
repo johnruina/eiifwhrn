@@ -9,7 +9,8 @@
 class VBO {
 public:
 	GLuint ID;
-	VBO(Vertex* vertices, GLsizeiptr size);
+	VBO();
+	void BufferData(Vertex* vertices, GLsizeiptr size);
 	void Bind();
 	void Unbind();
 	void Delete();

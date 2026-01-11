@@ -10,8 +10,9 @@
 class Texture {
 public:
 	GLuint ID;
-	GLenum type;
-	Texture(const char* filename, GLenum texType, GLenum slot, GLenum format, GLenum pixeltype);
+	std::string type;
+	std::string path;
+	Texture(const char* filename, std::string type);
 	void texUnit(Shader shader, const char* uniform, GLuint unit);
 	void Bind();
 	void Unbind();

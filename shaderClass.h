@@ -31,10 +31,16 @@ public:
 		GLint location = glGetUniformLocation(Shader::ID, uniform);
 		glUniform4f(location, value.x, value.y, value.z, value.w);
 	};
-	void SetMat4(const char* uniform, glm::mat4 &value) {
+	void SetMat4(const char* uniform, glm::mat4 value) {
 		GLint location = glGetUniformLocation(Shader::ID, uniform);
 		glUniformMatrix4fv(location,1,GL_FALSE,&value[0][0]);
 	};
+
+	void SetUInt(const char* uniform, GLuint value) {
+		GLint location = glGetUniformLocation(Shader::ID, uniform);
+		glUniform1i(location, value);
+	};
+
 	void Activate();
 	void Delete();
 };

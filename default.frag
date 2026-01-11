@@ -34,9 +34,13 @@ struct DirLight {
 
 uniform DirLight dirLight;
 
-uniform Material material;
-uniform sampler2D tex0;
 uniform vec3 viewPos;
+
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_diffuse2;
+uniform sampler2D texture_diffuse3;
+uniform sampler2D texture_specular1;
+uniform sampler2D texture_specular2;
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
@@ -45,7 +49,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     float diff = max(dot(normal, lightDir), 0.0);
     // specular shading
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), /*SHININESS*/0.5f);
     // combine results
     vec3 ambient  = light.ambient;
     vec3 diffuse  = light.diffuse  * diff;
@@ -55,8 +59,10 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 
 void main()
 {
-    vec4 lightless = texture(tex0,texCoord);
+    float gamma = 2.2;
 
+    //vec4 lightless = texture(texture_diffuse1, TexCoords);
+    vec4 lightless = vec4(1.0f);
     if (lightless.a < 0.1) {
         discard;
     }
@@ -64,5 +70,8 @@ void main()
     vec3 norm = normalize(normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 
-    FragColor = lightless * vec4(CalcDirLight(dirLight,norm,viewDir),1.0f) * vec4(vec3(1.0f-1.0f/gl_FragCoord[3]/ 200.0f), 1.0f);
+    vec4 pregamma = (lightless) * vec4(CalcDirLight(dirLight,norm,viewDir),1.0f) * vec4(vec3(1.0f-1.0f/gl_FragCoord[3]/ 200.0f), 1.0f);
+
+    FragColor = vec4(pow(pregamma.rgb, vec3(1.0/gamma)), pregamma.a);
+
 }

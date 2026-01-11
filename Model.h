@@ -1,4 +1,3 @@
-
 #ifndef MODEL_CLASS
 #define MODEL_CLASS
 
@@ -33,7 +32,7 @@ public:
 	void Render(Shader& shader)
 	{
 		for (unsigned int i = 0; i < meshes.size(); i++) {
-			meshes[i].SetMatrix(GetMatrix());
+			CopyMatrixTo(meshes[i]);
 			meshes[i].Render(shader);
 		}
 	}
