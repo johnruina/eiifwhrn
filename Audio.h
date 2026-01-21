@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <wrl.h>
 #include <xaudio2.h>
+#include <x3daudio.h>
 #include <vector>
 
 namespace wrl = Microsoft::WRL;
@@ -35,6 +36,7 @@ private:
 private:
 
 	//pvariables
+	//X3DAUDIO_HANDLE X3DInstance;
 	wrl::ComPtr<IXAudio2> xaudio2{};
 	IXAudio2MasteringVoice* xaudio2masteringvoice;
 	AudioObject sources[16] = {};

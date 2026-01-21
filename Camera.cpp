@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-Camera::Camera(int width, int height, glm::vec3 position) : width(width), height(height), position(position)
+Camera::Camera(int width, int height, glm::vec3 position) : width(width), height(height)
 {
-	updateCameraVectors();
+	t.TranslateTo(position);
 }

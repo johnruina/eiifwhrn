@@ -22,25 +22,96 @@
 #include "Vertex.h"
 #include "Mesh.h"
 
-class Model : public t_package {
+class Model {
 public:
-
+	t_package t;
 	Model(const char* path) {
 		LoadModel(path);
+		NormalizeVertices();
 	}
 
 	void Render(Shader& shader)
 	{
 		for (unsigned int i = 0; i < meshes.size(); i++) {
-			CopyMatrixTo(meshes[i]);
-			meshes[i].Render(shader);
+			meshes[i].Render(shader,t.GetMatrix());
+		}
+	}
+	void RenderWireframe(Shader& shader)
+	{
+		for (unsigned int i = 0; i < meshes.size(); i++) {
+			meshes[i].RenderWireframe(shader);
+		}
+	}
+
+	~Model() {
+		for (Mesh& mesh : meshes) {
+			mesh.~Mesh();
 		}
 	}
 
 private:
+	
+		void NormalizeVertices() {
+		float biggestx;
+		float smallestx;
+		float biggesty;
+		float smallesty;
+		float biggestz;
+		float smallestz;
+		bool initalized = false;
+		for (Mesh& mesh : meshes) {
+			for (Vertex& vertex : mesh.vertices) {
+				if (not initalized) {
+					biggestx = vertex.Position.x;
+					smallestx = vertex.Position.x;
+					biggesty = vertex.Position.y;
+					smallesty = vertex.Position.y;
+					biggestz = vertex.Position.z;
+					smallestz = vertex.Position.z;
+
+					initalized = true;
+				}
+				else {
+					biggestx = std::max(biggestx, vertex.Position.x);
+					smallestx = std::min(smallestx, vertex.Position.x);
+					biggesty = std::max(biggesty, vertex.Position.y);
+					smallesty = std::min(smallesty, vertex.Position.y);
+					biggestz = std::max(biggestz, vertex.Position.z);
+					smallestz = std::min(smallestz, vertex.Position.z);
+				}
+			}
+		}
+
+		if (not initalized) {
+			std::cout << "NO VERTICES";
+		}
+		else {
+			t.ScaleTo(glm::vec3(biggestx-smallestx,biggesty-smallesty,biggestz-smallestz));
+			float midx = (biggestx + smallestx) / 2.0f;
+			float midy = (biggesty + smallesty) / 2.0f;
+			float midz = (biggestz + smallestz) / 2.0f;
+			float xf = biggestx - smallestx;
+			float yf = biggesty - smallesty;
+			float zf = biggestz - smallestz;
+
+			for (Mesh& mesh : meshes) {
+				for (Vertex& vertex : mesh.vertices) {
+					vertex.Position = glm::vec3(
+						(vertex.Position.x - midx)/xf,
+						(vertex.Position.y - midy)/yf,
+						(vertex.Position.z - midz)/zf
+					);
+				}
+				mesh.UpdateVertices();
+			}
+			
+			//std::cout << biggestx - smallestx << ' ' << biggesty - smallesty << ' ' << biggestz - smallestz << '\n';
+		}
+
+	}
+
 	std::vector<Mesh> meshes;
 	std::string directory;
-
 
 	void LoadModel(std::string path) {
 		Assimp::Importer import;

@@ -1,3 +1,16 @@
+/*
+ ______  __    __  __     __   ______   ______   ______  ________   ______    ______   __    __
+|      \|  \  |  \|  \   |  \ /      \ |      \ /      \|        \ /      \  /      \ |  \  |  \
+ \$$$$$$| $$\ | $$| $$   | $$|  $$$$$$\ \$$$$$$|  $$$$$$\\$$$$$$$$|  $$$$$$\|  $$$$$$\| $$  | $$
+  | $$  | $$$\| $$| $$   | $$| $$  | $$  | $$  | $$   \$$  | $$   | $$  | $$| $$__| $$| $$__| $$
+  | $$  | $$$$\ $$ \$$\ /  $$| $$  | $$  | $$  | $$        | $$   | $$  | $$| $$    $$| $$    $$
+  | $$  | $$\$$ $$  \$$\  $$ | $$  | $$  | $$  | $$   __   | $$   | $$  | $$| $$$$$$$$| $$$$$$$$
+ _| $$_ | $$ \$$$$   \$$ $$  | $$__/ $$ _| $$_ | $$__/  \  | $$   | $$__/ $$| $$  | $$| $$  | $$
+|   $$ \| $$  \$$$    \$$$    \$$    $$|   $$ \ \$$    $$  | $$    \$$    $$| $$  | $$| $$  | $$
+ \$$$$$$ \$$   \$$     \$      \$$$$$$  \$$$$$$  \$$$$$$    \$$     \$$$$$$  \$$   \$$ \$$   \$$
+*/
+
+
 
 //OVERARCHING LIBRARIES
 #include <iostream>
@@ -16,6 +29,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 //MANMADE LIBRARIES
+#include "Physics.h"
 #include "Camera.h"
 #include "shaderClass.h"
 #include "VBO.h"
@@ -27,6 +41,9 @@
 #include "Keyboard.h"
 #include "Model.h"
 #include "DirLight.h"
+#include "Audio.h"
+#include "tFunctions.h"
+#include "Debug.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -74,8 +91,8 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
         firstmouse = false;
     }
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float xoffset = -xpos + lastX;
+    float yoffset = -lastY + ypos; // reversed since y-coordinates go from bottom to top
 
 
     camera.ProcessMouseMovement(xoffset, yoffset);
@@ -92,16 +109,16 @@ void ProcessInputs(GLFWwindow* window) {
     }
 
     if (keyboard.IsKeyDown('W')) {
-        camera.position += camera.speed * camera.Front;
+        camera.t.TranslateBy(camera.speed * camera.t.GetFrontVector());
     }
     if (keyboard.IsKeyDown('S')) {
-        camera.position -= camera.speed * camera.Front;
+        camera.t.TranslateBy(-(camera.speed * camera.t.GetFrontVector()));
     }
     if (keyboard.IsKeyDown('A')) {
-        camera.position -= camera.speed * camera.Right;
+        camera.t.TranslateBy(camera.speed * camera.t.GetRightVector());
     }
     if (keyboard.IsKeyDown('D')) {
-        camera.position += camera.speed * camera.Right;
+        camera.t.TranslateBy(-(camera.speed * camera.t.GetRightVector()));
     }
     if (keyboard.IsKeyDown(GLFW_KEY_LEFT_SHIFT)) {
         camera.speed *= 1.005;
@@ -112,6 +129,9 @@ void ProcessInputs(GLFWwindow* window) {
 }
 
 int main() {
+
+    Audio AudioSystem;
+
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -151,16 +171,12 @@ int main() {
     Shader ShaderProgram("default.vert", "default.frag");
     Shader ScreenShader("ScreenShader.vert", "ScreenShader.frag");
     
-    unsigned int quadVAO, quadVBO;
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    VAO quadVAO;
+    VBO quadVBO;
+    quadVBO.BufferData(&quadVertices, sizeof(quadVertices));
+
+    quadVAO.LinkVBO(quadVBO,0,2,GL_FLOAT, 4 * sizeof(float), (void*)0);
+    quadVAO.LinkVBO(quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     //LIGHTING
 
@@ -169,7 +185,9 @@ int main() {
     //
 
     std::vector<Model> cubes;
-    cubes.push_back(Model("cratelookingthing.obj"));
+    Model firstcube = Model("cratelookingthing.obj");
+    firstcube.t.TranslateTo({0.0f,10.0f,0.0f});
+    cubes.push_back(firstcube);
 
     /*
     std::vector<std::string> faces = {
@@ -181,9 +199,12 @@ int main() {
         "back.jpg"
     };
     */
-
-    Model testobj("gun2.obj");
-    Model terrain("terrain.obj");
+    Mesh floor = CreateCubeMesh();
+    floor.t.ScaleTo({100.0f,0.05f,100.0f});
+    floor.t.RotateByEulerAngles({ glm::radians(10.0f) ,0.0f,glm::radians(-10.0f) });
+    Model testcube("gun2.obj");
+    //Model testobj("gun2.obj");
+    //Model terrain("terrain.obj");
 
     //TEXTURE
 
@@ -224,7 +245,8 @@ int main() {
     unsigned long prev = 0;
 
     //DEBUG/SHORTSTAY STUFF ONLY
-
+    
+    AudioSystem.PlayAudio(L"Agartha.wav");
 
     //LOOP
     while (!glfwWindowShouldClose(window))
@@ -277,26 +299,25 @@ int main() {
 
                 prev = whichdir;
                 Model newcube("cratelookingthing.obj");
-                newcube.TranslateBy(glm::vec3(float(rand()%1000)/10.0f, float(rand() % 1000) / 10.0f, float(rand() % 1000) / 10.0f));
-                newcube.ScaleTo(4.5f);
-                newcube.RotateToQuaternion(cubes[cubes.size() - 1].GetRotation());
+                newcube.t.TranslateBy(glm::vec3(float(rand()%1000)/10.0f, float(rand() % 1000) / 10.0f, float(rand() % 1000) / 10.0f));
+                newcube.t.RotateToQuaternion(cubes[cubes.size() - 1].t.GetRotationQuaternion());
+                newcube.t.ScaleBy(1.0f);
+                newcube.t.RotateByEulerAngles(glm::vec3(0, -glm::radians(45.0f), 0));
+                newcube.t.RotateByEulerAngles(glm::vec3(0, 0, -glm::radians(45.0f)));
                 cubes.push_back(newcube);
-
+                
             }
         }
-        
-        glm::vec3 np = camera.position + camera.Front * 0.75f + camera.Right * 0.5f + camera.Up * 0.5f;
-        testobj.TranslateTo(np);
-
+        testcube.t.RotateByEulerAngles(glm::vec3(0, 0, -glm::radians(3.0f)));
         for (Model& e : cubes) {
 
-            if (frame % 90 < 30) {
-                e.RotateByEulerAngles(glm::vec3(0,glm::radians(3.0f), 0));
-            }
-            else {
-                e.RotateByEulerAngles(glm::vec3(0, 0, glm::radians(6.0f)));
-            }
-            
+        }
+        cubes[0].t.RotateByEulerAngles({0.0f,glm::radians(1.5f),glm::radians(1.5f)});
+        if (TInT(floor.t, cubes[0].t)) {
+            cubes[0].t.TranslateBy({ 0.05f,0.05f,0.0f });
+        }
+        else {
+            cubes[0].t.TranslateBy({0.05f,-0.05f,0.0f});
         }
 
         //RENDER SCENE
@@ -312,14 +333,13 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //SKYBOX
-
-
+        
 
         //STUFF
 
         ShaderProgram.Activate();
 
-        camera.Matrix(90.0f, 0.05f, 200.0f, ShaderProgram);
+        camera.Matrix(90.0f, 0.05f, 2000.0f, ShaderProgram);
 
         //LIGHTING STUFF
 
@@ -333,14 +353,13 @@ int main() {
 
         //testtex.Unbind();
 
-        terrain.Render(ShaderProgram);
-
-        testobj.Render(ShaderProgram);
 
         for (Model cube : cubes) {
             cube.Render(ShaderProgram);
         }
+        floor.Render(ShaderProgram);
 
+        //testcube.Render(ShaderProgram);
 
         //RENDER GUI
 
@@ -356,12 +375,16 @@ int main() {
 
         ScreenShader.Activate();
         
-        ScreenShader.Set1F("colorContrast", sin((float)frame/15) * 0.5f + 0.5f);
-        glBindVertexArray(quadVAO);
+        //ScreenShader.Set1F("colorContrast", sin((float)frame/15) * 0.5f + 0.5f);
+        quadVAO.Bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         
+        //GUI
+
+
+
         //end
 
         glfwSwapBuffers(window);

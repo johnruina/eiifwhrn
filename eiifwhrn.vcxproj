@@ -167,6 +167,8 @@
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Physics.h" />
+    <ClInclude Include="Structures.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DirLight.h" />
@@ -183,6 +185,7 @@
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="t.h" />
     <ClInclude Include="texture.h" />
+    <ClInclude Include="tFunctions.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />
     <ClInclude Include="Vertex.h" />

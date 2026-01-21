@@ -33,7 +33,11 @@ Audio::Audio()
     waveformatex.nBlockAlign = waveformatex.nChannels * bitspersample / 8;
     waveformatex.nAvgBytesPerSec = waveformatex.nSamplesPerSec * waveformatex.nBlockAlign;
     waveformatex.wBitsPerSample = bitspersample;
-    waveformatex.cbSize = 0;
+    waveformatex.cbSize = 0;   
+
+    //DWORD dwChannelMask;
+    //xaudio2masteringvoice->GetChannelMask(&dwChannelMask);
+    //X3DAudioInitialize(dwChannelMask, X3DAUDIO_SPEED_OF_SOUND, X3DInstance);
 }
 
 Audio::~Audio() {
