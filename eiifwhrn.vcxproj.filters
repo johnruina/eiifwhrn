@@ -34,6 +34,9 @@
     <ClCompile Include="Cubemap.h">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="tFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -177,6 +180,36 @@
     </None>
     <None Include="ImageBox.frag">
       <Filter>Shaders\GUI</Filter>
+    </None>
+    <None Include="shaders\ImageBox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\ImageBox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\default.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\ScreenShader.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\ScreenShader.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\DebugCube.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\DebugCube.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\default.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\skybox.frag">
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

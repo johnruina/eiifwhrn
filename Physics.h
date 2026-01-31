@@ -15,6 +15,11 @@
 #include "t.h"
 #include "tFunctions.h"
 
+enum ColliderType {
+	SPHERE,
+	PLANE
+};
+
 class p_package {
 friend class Physics;
 
@@ -77,6 +82,23 @@ private:
 	//angular velocity to come at a much later date
 };
 
+struct CollisionPoints {
+	glm::vec3 A; // Furthest point of A into B
+	glm::vec3 B; // Furthest point of B into A
+	glm::vec3 Normal; // B – A normalized
+	float Depth;    // Length of B – A
+	bool HasCollision;
+};
+
+struct Collision {
+	p_package* ObjA;
+	p_package* ObjB;
+
+	Collision(p_package* a, p_package* b) : ObjA(a), ObjB(b) {
+		
+	};
+};
+
 class Physics  {
 private:
 	std::vector<p_package*> objects;
@@ -106,41 +128,44 @@ public:
 			}
 
 		}
-		ResolveCollisions();
+		ResolveCollisions(dt);
 	}
+	void SolveCollisions(std::vector<Collision> collisions,float dt) {
+		for (Collision collision : collisions) {
+			if (not collision.ObjB->velocity) {
+				OneSidedResolve(collision.ObjA, collision.ObjB);
+			}
+			else {
+				MutualResolve(collision.ObjA, collision.ObjB);
+			}
+		}
+	};
+	void ResolveCollisions(float dt) {
+		std::vector<Collision> collisions;
 
-	void ResolveCollisions() {
 		for (p_package* a : objects) {
-			if (a->collision == false) continue;
+			if (a->collision == false or a->velocity == false) continue;
 			for (p_package* b : objects) {
 
 				if ((a == b) or (b->collision == false) or (not a->velocity and not b->velocity)) continue;
 
 				if (IsBoundingBoxInBoundingBox(a->t->GetAABB(), b->t->GetAABB()) and TInT(*a->t, *b->t)) {
-					if (not a->velocity) {
-						OneSidedResolve(a, b);
-					}
-					else if (not b->velocity) {
-						OneSidedResolve(b, a);
-					}
-					else {
-						MutualResolve(a, b);
-					}
-
+					collisions.emplace_back(a,b);
 				}
 			}
 		}
+
+		SolveCollisions(collisions,dt);
 	}
 
-	void OneSidedResolve(p_package* notmovingt, p_package* movingt) {
-		t_package* at = notmovingt->t;
-		t_package* bt = movingt->t;
+	void OneSidedResolve(p_package* a, p_package* b) {
+		t_package* at = a->t;
+		t_package* bt = b->t;
 		glm::vec3 center = at->GetTranslation();
 		glm::vec3 directionvec = LookAtVector(at->GetTranslation(), bt->GetTranslation());
 
-		movingt->t->TranslateTo(center + directionvec);
-
-		movingt->linearvelocity *= -0.1f;
+		a->linearvelocity *= -1;
+		
 	}
 
 	void MutualResolve(p_package* a, p_package* b) {

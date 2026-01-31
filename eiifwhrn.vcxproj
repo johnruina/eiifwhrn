@@ -164,6 +164,7 @@
     <ClCompile Include="shaderClass.cpp" />
     <ClCompile Include="Audio.cpp" />
     <ClCompile Include="texture.cpp" />
+    <ClCompile Include="tFunctions.cpp" />
     <ClCompile Include="VAO.cpp" />
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
@@ -204,6 +205,16 @@
     <None Include="default.vert" />
     <None Include="ScreenShader.frag" />
     <None Include="ScreenShader.vert" />
+    <None Include="shaders\DebugCube.frag" />
+    <None Include="shaders\DebugCube.vert" />
+    <None Include="shaders\default.frag" />
+    <None Include="shaders\default.vert" />
+    <None Include="shaders\ImageBox.frag" />
+    <None Include="shaders\ImageBox.vert" />
+    <None Include="shaders\ScreenShader.frag" />
+    <None Include="shaders\ScreenShader.vert" />
+    <None Include="shaders\skybox.frag" />
+    <None Include="shaders\skybox.vert" />
     <None Include="skybox.frag" />
     <None Include="skybox.vert" />
     <None Include="terrain.frag" />
