@@ -113,6 +113,9 @@ public:
 		FlushKey();
 		FlushChar();
 	}
+
+	std::queue<Event> keybuffer;
+	std::queue<char> charbuffer;
 private:
 
 	template<typename T> void TrimBuffer(std::queue<T>& q) noexcept {
@@ -125,9 +128,6 @@ private:
 	static constexpr unsigned int numerodekeys = 256u;
 	static constexpr unsigned int bufferSize = 16u;
 	std::bitset<numerodekeys> keys;
-
-	std::queue<Event> keybuffer;
-	std::queue<char> charbuffer;
 
 };
 

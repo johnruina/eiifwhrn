@@ -1,3 +1,5 @@
+#ifndef T_FUNCTIONS
+#define T_FUNCTIONS
 
 #include <iostream>
 #include <random>
@@ -9,19 +11,30 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
+
 #include "t.h"
 #include "Structures.h"
 
-std::optional<glm::vec3> RayIntersectsTriangle(const glm::vec3& ray_origin,
-	const glm::vec3& ray_vector,
-	const Triangle& triangle)
+glm::vec3 CalculateTriangleNormal(Triangle t) {
+	return glm::normalize(glm::cross(t.b-t.a,t.c-t.a));
+}
+
+float VolumeOfTriangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
+	return glm::dot(p1,glm::cross(p2,p3))/6.0f;
+}
+
+std::optional<glm::vec3> RayIntersectsTriangle(const Ray& ray,
+	const Triangle triangle)
 {
 
 	constexpr float epsilon = std::numeric_limits<float>::epsilon();
 
+	const glm::vec3 ray_origin = ray.origin;
+	const glm::vec3 ray_direction = ray.direction;
+
 	glm::vec3 edge1 = triangle.b - triangle.a;
 	glm::vec3 edge2 = triangle.c - triangle.a;
-	glm::vec3 ray_cross_e2 = cross(ray_vector, edge2);
+	glm::vec3 ray_cross_e2 = cross(ray_direction, edge2);
 	float det = dot(edge1, ray_cross_e2);
 
 	if (det > -epsilon && det < epsilon)
@@ -35,7 +48,7 @@ std::optional<glm::vec3> RayIntersectsTriangle(const glm::vec3& ray_origin,
 		return {};
 
 	glm::vec3 s_cross_e1 = cross(s, edge1);
-	float v = inv_det * dot(ray_vector, s_cross_e1);
+	float v = inv_det * dot(ray_direction, s_cross_e1);
 
 	if ((v < 0 && abs(v) > epsilon) || (u + v > 1 && abs(u + v - 1) > epsilon))
 		return {};
@@ -45,16 +58,18 @@ std::optional<glm::vec3> RayIntersectsTriangle(const glm::vec3& ray_origin,
 
 	if (t > epsilon) // ray intersection
 	{
-		return  glm::vec3(ray_origin + ray_vector * t);
+		return  glm::vec3(ray_origin + ray_direction * t);
 	}
 	else // This means that there is a line intersection but not a ray intersection.
 		return {};
 }
 
-std::optional<glm::vec3> IsRayInT(const glm::vec3& ray_origin,const glm::vec3& ray_vector, t_package t) {
-	BoundingBox aabb = t.GetRotationlessAABB();
-	glm::vec3 nrayorigin = glm::conjugate(t.GetRotationQuaternion()) * ray_origin;
-	glm::vec3 nrayvector = glm::conjugate(t.GetRotationQuaternion()) * ray_origin;
+std::optional<glm::vec3> IsRayInT(const Ray& ray, t_package t) {
+	const BoundingBox aabb = t.GetRotationlessAABB();
+	const glm::vec3 ray_origin = glm::conjugate(t.GetRotationQuaternion()) * ray.origin;
+	const glm::vec3 ray_direction = glm::conjugate(t.GetRotationQuaternion()) * ray.direction;
+
+
 
 	return {};
 }
@@ -94,8 +109,6 @@ bool TInT(t_package& t1, t_package& t2) {
 	if (not IsBoundingBoxInBoundingBox({ {-t1size[0] / 2.0f,-t1size[1] / 2.0f,-t1size[2] / 2.0f} ,{t1size[0] / 2.0f + t1pos[0],t1size[1] / 2.0f + t1pos[1],t1size[2] / 2.0f + t1pos[2]} }, t2c.GetAABB())) return false;
 	if (not IsBoundingBoxInBoundingBox({ {-t2size[0] / 2.0f,-t2size[1] / 2.0f,-t2size[2] / 2.0f} ,{t2size[0] / 2.0f + t2pos[0],t2size[1] / 2.0f + t2pos[1],t2size[2] / 2.0f + t2pos[2]} }, t1c.GetAABB())) return false;
 
-
-	//std::cout << t1.GetRotationEulerAngles()[0] << ' ' << t1.GetRotationEulerAngles()[1] << ' ' << t1.GetRotationEulerAngles()[2] << '\n';
 	return true;
 }
 
@@ -112,6 +125,12 @@ glm::quat AngleAxis(glm::vec3 axis, float angle) {
 	q.z = 0.0f;
 	q.w = cos(halfangle);
 	return q;
+}
+
+glm::vec3 LookAtVector(glm::vec3 start, glm::vec3 end) {
+
+	return glm::normalize(end-start);
+
 }
 
 glm::quat LookAt(glm::vec3 start, glm::vec3 end) {
@@ -132,3 +151,5 @@ glm::quat LookAt(glm::vec3 start, glm::vec3 end) {
 	glm::vec3 angleaxis = normalize(glm::cross(front, forwardvector));
 	return AngleAxis(angleaxis, axisangle);
 }
+
+#endif

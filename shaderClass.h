@@ -23,6 +23,11 @@ public:
 		glUniform1f(location, value);
 	};
 
+	void Set2F(const char* uniform, glm::vec2 value) {
+		GLint location = glGetUniformLocation(Shader::ID, uniform);
+		glUniform2f(location, value.x,value.y);
+	};
+
 	void Set3F(const char* uniform, glm::vec3 value) {
 		GLint location = glGetUniformLocation(Shader::ID, uniform);
 		glUniform3f(location, value.x,value.y,value.z);
@@ -36,7 +41,7 @@ public:
 		glUniformMatrix4fv(location,1,GL_FALSE,&value[0][0]);
 	};
 
-	void SetUInt(const char* uniform, GLuint value) {
+	void SetInt(const char* uniform, GLuint value) {
 		GLint location = glGetUniformLocation(Shader::ID, uniform);
 		glUniform1i(location, value);
 	};

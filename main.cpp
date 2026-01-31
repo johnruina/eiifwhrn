@@ -16,11 +16,12 @@
 #include <iostream>
 #include <vector>
 #include <random>
+#include <memory>
+
 
 //OPENGL LIBRARIES
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
-
 
 //math libraries
 #include<glm/glm.hpp>
@@ -44,6 +45,10 @@
 #include "Audio.h"
 #include "tFunctions.h"
 #include "Debug.h"
+#include "Cubemap.h"
+#include "Mouse.h"
+#include "QuadVertices.h"
+#include "Gui.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -57,12 +62,14 @@ Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
 bool firstmouse = false;
 
 Keyboard keyboard;
+Mouse mouse;
 
 void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
     glViewport(0, 0, w, h);
     width = w;
     height = h;
+    camera.UpdateWidthHeight(width,height);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -80,26 +87,28 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
+    if (camera.lockedcursor) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        float xpos = static_cast<float>(xposIn);
+        float ypos = static_cast<float>(yposIn);
 
-    if (firstmouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstmouse = false;
+        if (firstmouse)
+        {
+            lastX = xpos;
+            lastY = ypos;
+            firstmouse = false;
+        }
+
+        float xoffset = -xpos + lastX;
+        float yoffset = -lastY + ypos; // reversed since y-coordinates go from bottom to top
+
+
+        camera.ProcessMouseMovement(xoffset, yoffset);
+        glfwSetCursorPos(window, width / 2, height / 2);
     }
-
-    float xoffset = -xpos + lastX;
-    float yoffset = -lastY + ypos; // reversed since y-coordinates go from bottom to top
-
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
-    glfwSetCursorPos(window, width / 2, height / 2);
-
-    //lastX = xpos;
-    //lastY = ypos;
+    else {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
 }
 
 void ProcessInputs(GLFWwindow* window) {
@@ -129,9 +138,6 @@ void ProcessInputs(GLFWwindow* window) {
 }
 
 int main() {
-
-    Audio AudioSystem;
-
     glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -159,18 +165,27 @@ int main() {
     glViewport(0, 0, width, height);
 
     glEnable(GL_MULTISAMPLE);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_FRONT);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
-
     //SHADERS
+    Shader SkyboxShader("skybox.vert","skybox.frag");
     Shader ShaderProgram("default.vert", "default.frag");
     Shader ScreenShader("ScreenShader.vert", "ScreenShader.frag");
+    Shader ImageBoxShader("ImageBox.vert", "ImageBox.frag");
     
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
     VAO quadVAO;
     VBO quadVBO;
     quadVBO.BufferData(&quadVertices, sizeof(quadVertices));
@@ -178,43 +193,24 @@ int main() {
     quadVAO.LinkVBO(quadVBO,0,2,GL_FLOAT, 4 * sizeof(float), (void*)0);
     quadVAO.LinkVBO(quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
+
     //LIGHTING
 
     DirLight MainDirLight(glm::vec3(0.5f), glm::vec3(0.5f), glm::vec3(0.5f), glm::vec3(0.0f, -1.0f, 1.0f));
 
     //
 
-    std::vector<Model> cubes;
-    Model firstcube = Model("cratelookingthing.obj");
-    firstcube.t.TranslateTo({0.0f,10.0f,0.0f});
-    cubes.push_back(firstcube);
 
-    /*
     std::vector<std::string> faces = {
-        "right.jpg",
-        "left.jpg",
-        "top.jpg",
-        "bottom.jpg",
-        "front.jpg",
-        "back.jpg"
+        "assets/miramar_ft.tga",
+        "assets/miramar_bk.tga",
+        "assets/miramar_up.tga",
+        "assets/miramar_dn.tga",
+        "assets/miramar_rt.tga",
+        "assets/miramar_lf.tga"
     };
-    */
-    Mesh floor = CreateCubeMesh();
-    floor.t.ScaleTo({100.0f,0.05f,100.0f});
-    floor.t.RotateByEulerAngles({ glm::radians(10.0f) ,0.0f,glm::radians(-10.0f) });
-    Model testcube("gun2.obj");
-    //Model testobj("gun2.obj");
-    //Model terrain("terrain.obj");
+    Cubemap skybox(faces);
 
-    //TEXTURE
-
-    Texture testtex("testtexture.png", "texture_diffuse");
-
-    testtex.texUnit(ShaderProgram, "texture_diffuse1", 0);
-
-    Texture metaltex("metaltex.png", "texture_diffuse");
-
-    metaltex.texUnit(ShaderProgram, "texture_diffuse1", 0);
 
     //FRAMEBUFFER
     FBO framebuffer;
@@ -238,89 +234,117 @@ int main() {
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     framebuffer.Unbind();
 
+    //FOLDERS
+    std::vector<Model*> cubes = {};
+    std::vector<Mesh*> meshes = {};
+    std::vector<ImageBox*> gui = {};
+    //EVENTUALLY CONVERGE INTO ONE FOLDER
 
     //game logic and shit
+
+    Physics physicsengine;
 
     unsigned long int frame = 0;
     unsigned long prev = 0;
 
     //DEBUG/SHORTSTAY STUFF ONLY
-    
+    Audio AudioSystem;
     AudioSystem.PlayAudio(L"Agartha.wav");
+
+    //STUFF
+
+
+    ImageBox* crosshair = new ImageBox();
+    crosshair->center = {0.5f,0.5f};
+    crosshair->position = { 0.5f,0.5f,0.0f,0.0f };  
+    crosshair->scale = {0.0f,0.0f,2.0f,2.0f};
+    gui.push_back(crosshair);
+
+    ImageBox* testgui = new ImageBox();
+    testgui->center = { 0.0f,1.0f };
+    testgui->position = { 0.0f,1.0f,10.0f,-10.0f };
+    testgui->scale = {0.0f,0.0f,744.0f/4.0f,914.0f/4.0f};
+    testgui->Color = {1.0f,1.0f,1.0f};
+    testgui->Opacity = 0.8f;
+    gui.push_back(testgui);
+
+    Texture* magic = new Texture("itsmagicbitch.jpg");
+    testgui->tex = magic;
+
+    Model leiheng("leihengsword.obj");
+    leiheng.t.TranslateTo({ 5.0f,4.0f,0.0f });
+
+    Model testcube = Model("cratelookingthing.obj");
+    testcube.t.TranslateTo({ 0.0f,10.0f,0.0f });
+    testcube.AddPhysicsToEngine(physicsengine);
+
+    Model testcube2 = Model("cratelookingthing.obj");
+    testcube2.t.TranslateTo({ 10.0f,100.0f,0.0f });
+    testcube2.AddPhysicsToEngine(physicsengine);
+
+    Model newcube("cratelookingthing.obj");
+    newcube.t.TranslateTo({ 0.0f,rand() % 100,0.0f });
+    newcube.AddPhysicsToEngine(physicsengine);
+
+    Model newcube2("cratelookingthing.obj");
+    newcube2.t.TranslateTo({ 0.0f,rand() % 100,0.0f });
+    newcube2.AddPhysicsToEngine(physicsengine);
+
+    Model newcube3("cratelookingthing.obj");
+    newcube3.t.ScaleTo({ 2.0f,2.0f,2.0f });
+    newcube3.t.TranslateTo({ 7.0f,4.0f,0.0f });
+
+    Mesh* floor = CreateCubeMesh();
+    floor->t.ScaleTo({ 100.0f,0.5f,100.0f });
+    floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
+    p_package fp(&floor->t);
+    fp.DisableVelocity();
+    physicsengine.AddObject(&fp);
+    meshes.push_back(floor);
+
+    SkyboxShader.Activate();
+    SkyboxShader.SetInt("skybox",0);
 
     //LOOP
     while (!glfwWindowShouldClose(window))
     {
-        //START OF FRAME
+        ////////////////////////////////////START OF LOOP////////////////////////////////////
         frame++;
-
+        
         //INPUTS
         ProcessInputs(window);
 
-        //GAME LOGIC
-        unsigned int onceeveryframes = 1;
-        unsigned int timestogen = 1;
+        ////////////////////////////////////LOGIC////////////////////////////////////
+        unsigned int onceeveryframes = 5;
         if (frame % onceeveryframes == 0) {
 
-            for (int i = 0; i < timestogen; i++) {
-
-
-                if (cubes.size() > 2000) {
-                    cubes.erase(cubes.begin());
-                }
-
-                unsigned int whichdir = rand() % 5;
-
-                if (whichdir >= prev) {
-                    whichdir++;
-                }
-
-                glm::vec3 poschange(0.0f);
-                switch (whichdir) {
-                case 0:
-                    poschange.x = 2.0f;
-                    break;
-                case 1:
-                    poschange.x = -2.0f;
-                    break;
-                case 2:
-                    poschange.y = 2.0f;
-                    break;
-                case 3:
-                    poschange.y = -2.0f;
-                    break;
-                case 4:
-                    poschange.z = 2.0f;
-                    break;
-                case 5:
-                    poschange.z = -2.0f;
-                    break;
-                }
-
-                prev = whichdir;
-                Model newcube("cratelookingthing.obj");
-                newcube.t.TranslateBy(glm::vec3(float(rand()%1000)/10.0f, float(rand() % 1000) / 10.0f, float(rand() % 1000) / 10.0f));
-                newcube.t.RotateToQuaternion(cubes[cubes.size() - 1].t.GetRotationQuaternion());
-                newcube.t.ScaleBy(1.0f);
-                newcube.t.RotateByEulerAngles(glm::vec3(0, -glm::radians(45.0f), 0));
-                newcube.t.RotateByEulerAngles(glm::vec3(0, 0, -glm::radians(45.0f)));
-                cubes.push_back(newcube);
-                
+            if (cubes.size() > 50) {
+                delete cubes[0];
+                cubes.erase(cubes.begin());
+            }
+            
+            Model* newcube = new Model("cratelookingthing.obj");
+            newcube->t.TranslateTo({ rand() % 2,rand()%100,rand() % 2 });
+            newcube->AddPhysicsToEngine(physicsengine);
+            cubes.push_back(newcube);
+        }
+        while (keyboard.keybuffer.size() > 0) {
+            Keyboard::Event e = keyboard.ReadKey();
+            if (e.GetCode() == 'R' and e.IsPress()) {
+                camera.lockedcursor = not camera.lockedcursor;
             }
         }
-        testcube.t.RotateByEulerAngles(glm::vec3(0, 0, -glm::radians(3.0f)));
-        for (Model& e : cubes) {
 
+        if (keyboard.IsKeyDown('Z')) {
+            int initialsize = meshes.size();
+            for (int i = 0; i < initialsize; i++) {
+                OutputVec3(glm::eulerAngles(camera.t.GetRotationQuaternion()));
+                meshes[i]->Slice(camera.t.GetTranslation(), camera.t.GetRotationQuaternion(), meshes);
+            }
         }
-        cubes[0].t.RotateByEulerAngles({0.0f,glm::radians(1.5f),glm::radians(1.5f)});
-        if (TInT(floor.t, cubes[0].t)) {
-            cubes[0].t.TranslateBy({ 0.05f,0.05f,0.0f });
-        }
-        else {
-            cubes[0].t.TranslateBy({0.05f,-0.05f,0.0f});
-        }
+        physicsengine.Step(1.0f/60.0f);
 
-        //RENDER SCENE
+        ////////////////////////////////////RENDER SCENE////////////////////////////////////
 
         //BIND FRAMEBUFFER
         
@@ -332,10 +356,25 @@ int main() {
         glClearColor(212. / 255., 223. / 255., 232. / 255., 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //SKYBOX
-        
+        ////////////////////////////////////SKYBOX////////////////////////////////////
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glDisable(GL_DEPTH_TEST);  // change depth function so depth test passes when values are equal to depth buffer's content
+        SkyboxShader.Activate();
+        SkyboxShader.SetMat4("proj", camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f));
+        SkyboxShader.SetMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        skybox.Bind();
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glEnable(GL_DEPTH_TEST);
 
-        //STUFF
+        //CELESTIAL BODIES
+
+        //one day
+
+        ////////////////////////////////////RENDER STUFF////////////////////////////////////
 
         ShaderProgram.Activate();
 
@@ -347,26 +386,31 @@ int main() {
 
         //SCENE
 
-
+        
         //mat
 
 
         //testtex.Unbind();
 
-
-        for (Model cube : cubes) {
-            cube.Render(ShaderProgram);
+        for (int i = 0; i < cubes.size(); i++) {
+            cubes[i]->Render(ShaderProgram);
         }
-        floor.Render(ShaderProgram);
 
-        //testcube.Render(ShaderProgram);
-
-        //RENDER GUI
+        for (Mesh* mesh : meshes) {
+            mesh->Render(ShaderProgram);
+        }
+        
+        leiheng.Render(ShaderProgram);
+        testcube.Render(ShaderProgram);
+        testcube2.Render(ShaderProgram);
+        newcube.Render(ShaderProgram);
+        newcube2.Render(ShaderProgram);
+        newcube3.Render(ShaderProgram);
 
         //unbind stuff
         glBindVertexArray(0);
 
-        // second pass
+        ////////////////////////////////////SCENE FRAMEBUFFER////////////////////////////////////
         
         framebuffer.Unbind();
         glDisable(GL_DEPTH_TEST);
@@ -375,18 +419,19 @@ int main() {
 
         ScreenShader.Activate();
         
-        //ScreenShader.Set1F("colorContrast", sin((float)frame/15) * 0.5f + 0.5f);
+        //ScreenShader.Set1F("saturation", sin((float)frame/15) * 1.0f + 1.0f);
         quadVAO.Bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         
-        //GUI
+        ////////////////////////////////////GUI////////////////////////////////////
+        for (ImageBox *box : gui) {
+            box->Render(ImageBoxShader);
+        }
 
-
-
-        //end
-
+        
+        ////////////////////////////////////END OF FRAME////////////////////////////////////
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

@@ -147,7 +147,9 @@ public:
 	void RotateByQuaternionCumulate(glm::quat q) noexcept {
 		orient = orient * q;
 	}
-
+	void RotateToEulerAngles(glm::vec3 e) noexcept {
+		orient = glm::quat(e);
+	}
 	void RotateByEulerAngles(glm::vec3 e) noexcept {
 		RotateByQuaternion(glm::quat(e));
 	}

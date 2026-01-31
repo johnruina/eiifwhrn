@@ -31,6 +31,9 @@
     <ClCompile Include="Mouse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cubemap.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -99,6 +102,12 @@
     <ClInclude Include="Physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Gui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="QuadVertices.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="top.jpg">
@@ -163,6 +172,12 @@
     <None Include="ScreenShader.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="ImageBox.vert">
+      <Filter>Shaders\GUI</Filter>
+    </None>
+    <None Include="ImageBox.frag">
+      <Filter>Shaders\GUI</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -176,6 +191,9 @@
     </Filter>
     <Filter Include="Assets">
       <UniqueIdentifier>{85ec9022-6c34-47ce-9f8b-9ef29191d1c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\GUI">
+      <UniqueIdentifier>{834b79d9-80f7-40c0-8e4f-981c3a885af8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

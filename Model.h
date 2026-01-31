@@ -21,13 +21,57 @@
 #include "t.h"
 #include "Vertex.h"
 #include "Mesh.h"
+#include "Physics.h"
 
 class Model {
 public:
 	t_package t;
+	p_package p;
+	Physics* bindedphysicsengine;
 	Model(const char* path) {
 		LoadModel(path);
 		NormalizeVertices();
+		p.t = &t;
+	}
+	
+	std::vector<Mesh*> ReturnMeshes() {
+		std::vector<Mesh*> tr = {};
+		for (Mesh& mesh : meshes) {
+			tr.emplace_back(&mesh);
+		}
+		return tr;
+	}
+	
+	float GetVolume() {
+		float runningtotal = 0.0f;
+		glm::vec3 modelscale = t.GetScale();
+		for (const Mesh mesh : meshes) {
+			runningtotal += mesh.GetVolume() * modelscale.x * modelscale.y * modelscale.z;
+		}
+		return runningtotal;
+	}
+
+	void Slice(glm::vec3 origin, glm::quat slicequat) {
+
+		glm::vec3 pos = t.GetTranslation() + (glm::conjugate(slicequat) * (origin - t.GetTranslation()));;
+
+
+	}
+
+	void InitializePhysics() {
+
+	}
+
+	void AddPhysicsToEngine(Physics& engine) {
+		engine.AddObject(&p);
+		bindedphysicsengine = &engine;
+	}
+
+	void RemovePhysicsFromEngine() {
+		if (bindedphysicsengine != nullptr) {
+			bindedphysicsengine->RemoveObject(&p);
+			bindedphysicsengine = nullptr;
+		}
 	}
 
 	void Render(Shader& shader)
@@ -44,14 +88,16 @@ public:
 	}
 
 	~Model() {
+		RemovePhysicsFromEngine();
 		for (Mesh& mesh : meshes) {
 			mesh.~Mesh();
 		}
 	}
 
+	std::vector<Mesh> meshes;
 private:
 	
-		void NormalizeVertices() {
+	void NormalizeVertices() {
 		float biggestx;
 		float smallestx;
 		float biggesty;
@@ -86,7 +132,7 @@ private:
 			std::cout << "NO VERTICES";
 		}
 		else {
-			t.ScaleTo(glm::vec3(biggestx-smallestx,biggesty-smallesty,biggestz-smallestz));
+			t.ScaleBy(glm::vec3(biggestx-smallestx,biggesty-smallesty,biggestz-smallestz));
 			float midx = (biggestx + smallestx) / 2.0f;
 			float midy = (biggesty + smallesty) / 2.0f;
 			float midz = (biggestz + smallestz) / 2.0f;
@@ -109,8 +155,6 @@ private:
 		}
 
 	}
-
-	std::vector<Mesh> meshes;
 	std::string directory;
 
 	void LoadModel(std::string path) {
@@ -186,8 +230,34 @@ private:
 
 		return Mesh(vertices, indices);
 	}
-
-
 };
+
+std::optional<std::vector<glm::vec3>> RayIntersectsModel(const Ray& ray, Model& model)
+{
+	//USE THIS AFTER A CHEAPER CHECK
+	std::vector<glm::vec3> intersections = {};
+
+	//convert ray to modelspace
+
+	glm::vec3 modelscale = model.t.GetScale();
+	glm::vec3 modelpos = model.t.GetTranslation();
+	glm::quat modelquat = model.t.GetRotationQuaternion();
+
+	for (Mesh* mesh : model.ReturnMeshes()) {
+
+		glm::mat4 inverse = glm::inverse(model.t.GetMatrix() * mesh->t.GetMatrix());
+		glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin,1.0f));
+		glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
+
+		for (int i = 0; i < mesh->indices.size() / 3; i++) {
+			std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[ i * 3]].Position, mesh->vertices[mesh->indices[i * 3+1]].Position,mesh->vertices[mesh->indices[i * 3+2]].Position });
+			if (intersection.has_value()) {
+				intersections.push_back(intersection.value());
+			}
+		}
+	}
+	if (intersections.size() > 0) return intersections;
+	else return {};
+}
 
 #endif

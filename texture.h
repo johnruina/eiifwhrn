@@ -10,9 +10,8 @@
 class Texture {
 public:
 	GLuint ID;
-	std::string type;
 	std::string path;
-	Texture(const char* filename, std::string type);
+	Texture(const char* filename);
 	void texUnit(Shader shader, const char* uniform, GLuint unit);
 	void Bind();
 	void Unbind();

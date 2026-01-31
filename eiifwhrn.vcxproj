@@ -156,6 +156,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Cubemap.h" />
     <ClCompile Include="EBO.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
@@ -167,7 +168,9 @@
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Gui.h" />
     <ClInclude Include="Physics.h" />
+    <ClInclude Include="QuadVertices.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Debug.h" />
@@ -191,6 +194,8 @@
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ImageBox.frag" />
+    <None Include="ImageBox.vert" />
     <None Include="DebugCube.frag" />
     <None Include="DebugCube.vert" />
     <None Include="instancedcubes.frag" />

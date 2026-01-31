@@ -1,11 +1,15 @@
 #include "texture.h"
 
-Texture::Texture(const char* filename, std::string type) : path(filename), type(type)
+Texture::Texture(const char* filename) : path(filename)
 {
     int widthImg, heightImg, nrComponents;
     stbi_set_flip_vertically_on_load(true);
     unsigned char* bytes = stbi_load(filename, &widthImg, &heightImg, &nrComponents, 0);
-
+    if (not bytes)
+    {
+        std::cout << "Failed to load texture" << std::endl;
+        throw;
+    }
     glGenTextures(1, &ID);
     glBindTexture(GL_TEXTURE_2D, ID);
 
@@ -31,7 +35,7 @@ Texture::Texture(const char* filename, std::string type) : path(filename), type(
 }
 
 void Texture::texUnit(Shader shader, const char* uniform, GLuint unit) {
-    shader.SetUInt(uniform,unit);
+    shader.SetInt(uniform,unit);
 }
 
 void Texture::Bind() {

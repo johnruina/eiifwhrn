@@ -28,6 +28,51 @@ UINT DebugCubeEBO;
 UINT DebugCubeVBO;
 */
 
+float skyboxVertices[] = {
+    // positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f
+};
+
 std::vector<Vertex> CUBEVERTICES = {
 {{0.5f,0.5f,0.5f}, {0.0f,1.0f,0.0f},{ 0.0f,0.0f} },
 {{0.5f,0.5f,-0.5f}, {0.0f,1.0f,0.0f},{ 0.0f,1.0f}},
@@ -61,14 +106,14 @@ std::vector<Vertex> CUBEVERTICES = {
 };
 
 std::vector<unsigned int> CUBEINDICES = {
-    0,1,3, 1,2,3,
-    4,5,7, 5,6,7,
-    
-    8,9,11, 9,10,11,
-    12,13,15, 13,14,15,
+    0, 3, 1,  3, 2, 1, 
+    4, 5, 7,  5, 6, 7,
 
-    16,17,19, 17,18,19,
-    20,21,23, 21,22,23,
+    8, 9, 11,  9, 10, 11,
+    12, 15, 13,  15, 14, 13, 
+
+    16, 17, 19,  17, 18, 19, 
+    20, 23, 21,  23, 22, 21  
 };
 /*
 void InitializeDebug() {
@@ -100,8 +145,8 @@ void OutputVec3(glm::vec3 tooutput) {
 	std::cout << tooutput.x << ' ' << tooutput.y << ' ' << tooutput.z << '\n';
 }
 
-Mesh CreateCubeMesh() {
-    return Mesh(CUBEVERTICES, CUBEINDICES);
+Mesh* CreateCubeMesh() {
+    return new Mesh(CUBEVERTICES, CUBEINDICES);
 }
 
 #endif
