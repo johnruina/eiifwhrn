@@ -111,6 +111,12 @@
     <ClInclude Include="QuadVertices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="t2d.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="font.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="top.jpg">
@@ -139,48 +145,23 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="default.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="default.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="skybox.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="skybox.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="terrain.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="terrain.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="instancedcubes.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="instancedcubes.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="DebugCube.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="DebugCube.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="ScreenShader.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="ScreenShader.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="ImageBox.vert">
-      <Filter>Shaders\GUI</Filter>
-    </None>
-    <None Include="ImageBox.frag">
-      <Filter>Shaders\GUI</Filter>
-    </None>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{ef6dcc4e-62cf-427d-8dac-332a472e243b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{154e4e97-c2e9-49ec-8424-238ebf6b5c41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{2f478c6d-75be-4dd0-b0e5-a838d5416fee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{85ec9022-6c34-47ce-9f8b-9ef29191d1c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\GUI">
+      <UniqueIdentifier>{834b79d9-80f7-40c0-8e4f-981c3a885af8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
     <None Include="shaders\ImageBox.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -211,22 +192,17 @@
     <None Include="shaders\skybox.frag">
       <Filter>Shaders</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{ef6dcc4e-62cf-427d-8dac-332a472e243b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{154e4e97-c2e9-49ec-8424-238ebf6b5c41}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{2f478c6d-75be-4dd0-b0e5-a838d5416fee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets">
-      <UniqueIdentifier>{85ec9022-6c34-47ce-9f8b-9ef29191d1c0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders\GUI">
-      <UniqueIdentifier>{834b79d9-80f7-40c0-8e4f-981c3a885af8}</UniqueIdentifier>
-    </Filter>
+    <None Include="Box.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Box.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="2DText.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="2DText.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -14,11 +14,9 @@ uniform vec2 pixelPos;
 uniform vec4 Color = {0.0f,0.0f,0.0f,1.0f};
 uniform vec4 BackgroundColor = {0.0f,0.0f,0.0f,1.0f};
 
-uniform sampler2D tex;
-
 void main()
 { 
-    FragColor = Color * texture(tex,TexCoords);
+    FragColor = Color;
     
 
     float rounding = clamp(rounding,0.0f,1.0f);

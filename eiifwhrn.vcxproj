@@ -97,7 +97,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freetype.lib;assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -115,7 +115,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freetype.lib;assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -131,7 +131,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freetype.lib;assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -149,7 +149,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>freetype.lib;assimp-vc143-mt.lib;glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>
       </EntryPointSymbol>
     </Link>
@@ -169,6 +169,7 @@
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="font.h" />
     <ClInclude Include="Gui.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="QuadVertices.h" />
@@ -188,37 +189,12 @@
     <ClInclude Include="Audio.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="t.h" />
+    <ClInclude Include="t2d.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="tFunctions.h" />
     <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />
     <ClInclude Include="Vertex.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ImageBox.frag" />
-    <None Include="ImageBox.vert" />
-    <None Include="DebugCube.frag" />
-    <None Include="DebugCube.vert" />
-    <None Include="instancedcubes.frag" />
-    <None Include="instancedcubes.vert" />
-    <None Include="default.frag" />
-    <None Include="default.vert" />
-    <None Include="ScreenShader.frag" />
-    <None Include="ScreenShader.vert" />
-    <None Include="shaders\DebugCube.frag" />
-    <None Include="shaders\DebugCube.vert" />
-    <None Include="shaders\default.frag" />
-    <None Include="shaders\default.vert" />
-    <None Include="shaders\ImageBox.frag" />
-    <None Include="shaders\ImageBox.vert" />
-    <None Include="shaders\ScreenShader.frag" />
-    <None Include="shaders\ScreenShader.vert" />
-    <None Include="shaders\skybox.frag" />
-    <None Include="shaders\skybox.vert" />
-    <None Include="skybox.frag" />
-    <None Include="skybox.vert" />
-    <None Include="terrain.frag" />
-    <None Include="terrain.vert" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="back.jpg" />
@@ -229,6 +205,22 @@
     <Image Include="right.jpg" />
     <Image Include="testtexture.png" />
     <Image Include="top.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="2DText.frag" />
+    <None Include="2DText.vert" />
+    <None Include="Box.frag" />
+    <None Include="Box.vert" />
+    <None Include="shaders\DebugCube.frag" />
+    <None Include="shaders\DebugCube.vert" />
+    <None Include="shaders\default.frag" />
+    <None Include="shaders\default.vert" />
+    <None Include="shaders\ImageBox.frag" />
+    <None Include="shaders\ImageBox.vert" />
+    <None Include="shaders\ScreenShader.frag" />
+    <None Include="shaders\ScreenShader.vert" />
+    <None Include="shaders\skybox.frag" />
+    <None Include="shaders\skybox.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

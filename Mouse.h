@@ -3,6 +3,7 @@
 
 #include <bitset>
 #include <queue>
+#include <optional>
 
 class Mouse {
 	friend class Window;
@@ -80,9 +81,9 @@ public:
 		return RightIsDown;
 	};
 
-	Mouse::Event Read() noexcept;
-
-private:
+	Mouse::Event Read() noexcept; //ARCHIAC
+	bool ReadTo(std::optional<Mouse::Event>& b) noexcept;
+public:
 	//yummy
 	void OnMouseMove(unsigned int x, unsigned int y) noexcept;
 	void MouseEnter() noexcept;
@@ -90,10 +91,11 @@ private:
 	void OnWheelDelta(int x, int y, int delta) noexcept;
 	void WheelUp(int x, int y) noexcept;
 	void WheelDown(int x, int y) noexcept;
-	void LeftDown(int x, int y) noexcept;
-	void RightDown(int x, int y) noexcept;
-	void LeftUp(int x, int y) noexcept;
-	void RightUp(int x, int y) noexcept;
+	void LeftDown() noexcept;
+	void RightDown() noexcept;
+	void LeftUp() noexcept;
+	void RightUp() noexcept;
+private:
 	void Flush() noexcept {
 		buffer = std::queue<Event>();
 	};

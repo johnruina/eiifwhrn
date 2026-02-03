@@ -13,4 +13,15 @@ float quadVertices[] = { // vertex attributes for a quad that fills the entire s
 	 1.0f,  1.0f,  1.0f, 1.0f
 };
 	
+float quadVerticesNoTexCoords[] = { 
+	// positions  
+	-1.0f,  1.0f, 
+	-1.0f, -1.0f,
+	 1.0f, -1.0f, 
+
+	-1.0f,  1.0f, 
+	 1.0f, -1.0f, 
+	 1.0f,  1.0f, 
+};
+
 #endif

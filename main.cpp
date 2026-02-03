@@ -66,6 +66,7 @@
 #include <vector>
 #include <random>
 #include <memory>
+#include <type_traits>
 
 
 //OPENGL LIBRARIES
@@ -78,8 +79,13 @@
 #include<glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+//NON MANMADES
+#include <ft2build.h>
+#include FT_FREETYPE_H  
+
 //MANMADE LIBRARIES
 #include "Physics.h"
+#include "font.h"
 #include "Camera.h"
 #include "shaderClass.h"
 #include "VBO.h"
@@ -102,8 +108,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-unsigned int height = 720;
-unsigned int width = 1280;
+int height = 720;
+int width = 1280;
 float lastX = width / 2.0f;
 float lastY = height / 2.0f;
 
@@ -136,8 +142,9 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+    mouse.OnMouseMove(static_cast<float>(xposIn), static_cast<float>(yposIn));
     if (camera.lockedcursor) {
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         float xpos = static_cast<float>(xposIn);
         float ypos = static_cast<float>(yposIn);
 
@@ -151,12 +158,26 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
         float xoffset = -xpos + lastX;
         float yoffset = -lastY + ypos; // reversed since y-coordinates go from bottom to top
 
+        lastX = width / 2;
+        lastY = height / 2;
 
         camera.ProcessMouseMovement(xoffset, yoffset);
         glfwSetCursorPos(window, width / 2, height / 2);
+        mouse.OnMouseMove(width/2.0f, height/2.0f);
     }
     else {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        if (action == GLFW_PRESS) mouse.RightDown();
+        else mouse.RightUp();
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) mouse.LeftDown();
+        else mouse.LeftUp();
     }
 }
 
@@ -209,6 +230,7 @@ int main() {
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window,mouse_button_callback);
     glEnable(GL_DEPTH_TEST);
     glfwSwapInterval(1);
     glViewport(0, 0, width, height);
@@ -225,6 +247,8 @@ int main() {
     Shader ShaderProgram("shaders/default.vert", "shaders/default.frag");
     Shader ScreenShader("shaders/ScreenShader.vert", "shaders/ScreenShader.frag");
     Shader ImageBoxShader("shaders/ImageBox.vert", "shaders/ImageBox.frag");
+    Shader BoxShader("shaders/Box.vert", "shaders/Box.frag");
+    Shader Text2DShader("shaders/2DText.vert", "shaders/2DText.frag");
     
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
@@ -260,7 +284,6 @@ int main() {
     };
     Cubemap skybox(faces);
 
-
     //FRAMEBUFFER
     FBO framebuffer;
     framebuffer.Bind();
@@ -283,10 +306,16 @@ int main() {
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     framebuffer.Unbind();
 
+    //FONTS
+    std::vector<Font> fonts;
+
+    std::string arialdirectory = "C:/Windows/Fonts/arial.ttf";
+    Font* arial = new Font(arialdirectory.c_str());
+
     //FOLDERS
     std::vector<Model*> cubes = {};
     std::vector<Mesh*> meshes = {};
-    std::vector<ImageBox*> gui = {};
+    std::vector<Box*> gui = {};
     //EVENTUALLY CONVERGE INTO ONE FOLDER
 
     //game logic and shit
@@ -303,19 +332,40 @@ int main() {
     //STUFF
 
 
-    ImageBox* crosshair = new ImageBox();
-    crosshair->center = {0.5f,0.5f};
-    crosshair->position = { 0.5f,0.5f,0.0f,0.0f };  
-    crosshair->scale = {0.0f,0.0f,2.0f,2.0f};
+    Box* crosshair = new Box();
+    crosshair->Color = {0.0f,0.0f,0.0f};
+    crosshair->t2d.center = {0.5f,0.5f};
+    crosshair->t2d.position = { 0.5f,0.5f,0.0f,0.0f };
+    crosshair->t2d.size = {0.0f,0.0f,4.0f,4.0f};
+    crosshair->rounding = 0.1;
     gui.push_back(crosshair);
 
     ImageBox* testgui = new ImageBox();
-    testgui->center = { 0.0f,1.0f };
-    testgui->position = { 0.0f,1.0f,10.0f,-10.0f };
-    testgui->scale = {0.0f,0.0f,744.0f/4.0f,914.0f/4.0f};
+    testgui->t2d.center = { 0.0f,1.0f };
+    testgui->t2d.position = { 0.0f,1.0f,10.0f,-10.0f };
+    testgui->t2d.size = {0.0f,0.0f,744.0f/2.0f,914.0f/2.0f};
     testgui->Color = {1.0f,1.0f,1.0f};
     testgui->Opacity = 0.8f;
+    testgui->rounding = 0.1f;
     gui.push_back(testgui);
+
+    BoxButton* button = new BoxButton();
+    button->t2d.center = { 1.0f,1.0f };
+    button->t2d.position = { 1.0f,1.0f,-10.0f,-10.0f };
+    button->t2d.size = { 0.0f,0.0f,100.0f,100.0f };
+    button->Color = { 1.0f,0.0f,0.0f };
+    button->Opacity = 1.0f;
+    button->rounding = 0.1f;
+    gui.push_back(button);
+
+    TextBox* textbox = new TextBox();
+    textbox->t2d.center = { 1.0f,1.0f };
+    textbox->t2d.position = { 0.5f,0.5f,-10.0f,-10.0f };
+    textbox->t2d.size = { 0.0f,0.0f,100.0f,100.0f };
+    textbox->Color = {0.5f,0.5f,0.5f};
+    textbox->Opacity = 1.0f;
+    textbox->rounding = 0.1f;
+    gui.push_back(textbox);
 
     Texture* magic = new Texture("itsmagicbitch.jpg");
     testgui->tex = magic;
@@ -364,10 +414,21 @@ int main() {
         ProcessInputs(window);
 
         ////////////////////////////////////LOGIC////////////////////////////////////
-        while (keyboard.keybuffer.size() > 0) {
-            Keyboard::Event e = keyboard.ReadKey();
-            if (e.GetCode() == 'R' and e.IsPress()) {
+
+        std::optional<Mouse::Event> mouseeventbuffer;
+
+        while (mouse.ReadTo(mouseeventbuffer) == true) {
+            Mouse::Event event = mouseeventbuffer.value();
+            if (event.GetType() == Mouse::Event::Type::RPress) {
                 camera.lockedcursor = not camera.lockedcursor;
+            } else if (event.GetType() == Mouse::Event::Type::LPress) {
+                for (Box* box : gui) {
+
+                    if (BoxButton* boxe = dynamic_cast<BoxButton*>(box)) {
+                        //bitch ass goofy ass y is flipped bleh
+                        boxe->UpdateClicked(mouse.GetX(), height - mouse.GetY());
+                    }
+                }
             }
         }
 
@@ -395,7 +456,7 @@ int main() {
 
         leiheng.t.TranslateTo(camera.t.GetTranslation() + camera.t.GetFrontVector() * 1.0f + camera.t.GetRightVector() * -0.8f);
         leiheng.t.RotateToQuaternion(LookAt(camera.t.GetFrontVector()));
-        leiheng.t.RotateByQuaternionCumulate(glm::quat({0.0f,0.0f,glm::radians((float)frame * 45.0f)}));
+        leiheng.t.RotateByQuaternionCumulate(glm::quat({0.0f,0.0f,glm::radians((float)frame * 7.0f)}));
 
         physicsengine.Step(1.0f/60.0f);
 
@@ -481,8 +542,20 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 6);
         
         ////////////////////////////////////GUI////////////////////////////////////
-        for (ImageBox *box : gui) {
-            box->Render(ImageBoxShader);
+
+        for (Box *box : gui) {
+            if (box->Opacity == 0.0f) continue;
+            
+            if (ImageBox* boxe = dynamic_cast<ImageBox*>(box)) {
+                box->Render(ImageBoxShader, width, height);
+            }
+            else if (TextBox* boxe = dynamic_cast<TextBox*>(box)) {
+                boxe->Render(BoxShader, width, height);
+                boxe->RenderText(Text2DShader,width,height);
+            }
+            else {
+                box->Render(BoxShader, width, height);
+            }
         }
 
         

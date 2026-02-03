@@ -22,28 +22,28 @@ void Mouse::MouseExit() noexcept
     TrimBuffer();
 }
 
-void Mouse::RightDown(int x, int y) noexcept
+void Mouse::RightDown() noexcept
 {
     RightIsDown = true;
     buffer.push(Mouse::Event(Event::Type::RPress, *this));
     TrimBuffer();
 }
 
-void Mouse::RightUp(int x, int y) noexcept
+void Mouse::RightUp() noexcept
 {
     RightIsDown = false;
     buffer.push(Mouse::Event(Event::Type::RRelease, *this));
     TrimBuffer();
 }
 
-void Mouse::LeftDown(int x, int y) noexcept
+void Mouse::LeftDown() noexcept
 {
     LeftIsDown = true;
     buffer.push(Mouse::Event(Event::Type::LPress, *this));
     TrimBuffer();
 }
 
-void Mouse::LeftUp(int x, int y) noexcept
+void Mouse::LeftUp() noexcept
 {
     LeftIsDown = false;
     buffer.push(Mouse::Event(Event::Type::LRelease, *this));
@@ -80,5 +80,18 @@ Mouse::Event Mouse::Read() noexcept {
     }
     else {
         return Mouse::Event();
+    }
+}
+
+bool Mouse::ReadTo(std::optional<Mouse::Event>& b) noexcept {
+    if (buffer.size() > 0u) {
+        Mouse::Event e = buffer.front();
+        buffer.pop();
+        b = e;
+        return true;
+    }
+    else {
+        b = {};
+        return false;
     }
 }
