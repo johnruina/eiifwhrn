@@ -82,16 +82,3 @@ Mouse::Event Mouse::Read() noexcept {
         return Mouse::Event();
     }
 }
-
-bool Mouse::ReadTo(std::optional<Mouse::Event>& b) noexcept {
-    if (buffer.size() > 0u) {
-        Mouse::Event e = buffer.front();
-        buffer.pop();
-        b = e;
-        return true;
-    }
-    else {
-        b = {};
-        return false;
-    }
-}

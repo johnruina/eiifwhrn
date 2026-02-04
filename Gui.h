@@ -62,7 +62,6 @@ public:
 
     void UpdateClicked(float mousex, float mousey) {
         //IMPLEMENT ROUNDING SOMETIME
-        std::cout << t2d.pixelposition.x << ' ' <<mousex << ' ' << t2d.pixelposition.x + t2d.pixelsize.x << '\n';
         if (mousex > t2d.pixelposition.x and mousey > t2d.pixelposition.y and mousex < t2d.pixelposition.x + t2d.pixelsize.x and mousey < t2d.pixelposition.y + t2d.pixelsize.y) {
             clicked = true;
             std::cout << "CLICKED\n";

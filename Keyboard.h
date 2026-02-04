@@ -31,6 +31,10 @@ public:
 		unsigned char GetCode() const noexcept {
 			return code;
 		}
+
+		explicit operator bool() const {
+			return IsValid();
+		}
 	private:
 		Type type;
 		unsigned char code;
@@ -114,9 +118,9 @@ public:
 		FlushChar();
 	}
 
+private:
 	std::queue<Event> keybuffer;
 	std::queue<char> charbuffer;
-private:
 
 	template<typename T> void TrimBuffer(std::queue<T>& q) noexcept {
 		while (q.size() > bufferSize) {

@@ -25,7 +25,7 @@ public:
 		};
 		Event() noexcept : type(Type::Invalid), LeftIsPressed(false), RightIsDown(false), x(0), y(0) {}
 		Event(Type t, const Mouse& parent) noexcept : type(t), LeftIsPressed(parent.LeftIsDown), RightIsDown(parent.RightIsDown), x(parent.X), y(parent.Y) {}
-		bool const IsValid() noexcept {
+		bool const IsValid() const noexcept {
 			return type != Type::Invalid;
 		}
 		Type GetType() noexcept {
@@ -46,6 +46,10 @@ public:
 		}
 		std::pair<int, int> GetPos() noexcept {
 			return { x,y };
+		}
+
+		explicit operator bool() const {
+			return IsValid();
 		}
 	private:
 		Type type;
@@ -81,8 +85,7 @@ public:
 		return RightIsDown;
 	};
 
-	Mouse::Event Read() noexcept; //ARCHIAC
-	bool ReadTo(std::optional<Mouse::Event>& b) noexcept;
+	Mouse::Event Read() noexcept;
 public:
 	//yummy
 	void OnMouseMove(unsigned int x, unsigned int y) noexcept;

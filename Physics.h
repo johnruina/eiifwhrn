@@ -5,12 +5,15 @@
 #include <random>
 #include <vector>
 #include <memory>
+#include <cmath>
 
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
+
+
 
 #include "t.h"
 #include "tFunctions.h"
@@ -72,14 +75,26 @@ public:
 		velocity = false;
 	}
 
-private:
+	float GetMass() const noexcept {
+		return mass;
+	}
+
+	void SetMass(float newmass) {
+		mass = newmass;
+	}
+
+
+public:
 	bool collision;
 	bool velocity;
+
+	float restitution = 1.0f;
 
 	glm::vec3 linearvelocity;
 	float mass;
 	glm::vec3 force;
-	//angular velocity to come at a much later date
+	//it's time for me to lose my head
+	glm::vec3 angularvelocity; //guhhhh
 };
 
 struct CollisionPoints {
@@ -123,6 +138,7 @@ public:
 				p->linearvelocity += p->force / p->mass * dt;
 
 				p->t->TranslateBy(p->linearvelocity * dt);
+				p->t->RotateByQuaternion(glm::quat( p->angularvelocity * dt));
 
 				p->force = glm::vec3(0.0f);
 			}
@@ -132,12 +148,7 @@ public:
 	}
 	void SolveCollisions(std::vector<Collision> collisions,float dt) {
 		for (Collision collision : collisions) {
-			if (not collision.ObjB->velocity) {
-				OneSidedResolve(collision.ObjA, collision.ObjB);
-			}
-			else {
-				MutualResolve(collision.ObjA, collision.ObjB);
-			}
+			Resolve(collision.ObjA, collision.ObjB);
 		}
 	};
 	void ResolveCollisions(float dt) {
@@ -158,24 +169,27 @@ public:
 		SolveCollisions(collisions,dt);
 	}
 
-	void OneSidedResolve(p_package* a, p_package* b) {
-		t_package* at = a->t;
-		t_package* bt = b->t;
-		glm::vec3 center = at->GetTranslation();
-		glm::vec3 directionvec = LookAtVector(at->GetTranslation(), bt->GetTranslation());
+	void Resolve(p_package* a, p_package* b) {
+		glm::vec3 relativevelocity = a->linearvelocity - b->linearvelocity;
+		glm::vec3 collisionnormal = glm::normalize(b->t->GetTranslation()-a->t->GetTranslation() );
 
-		a->linearvelocity *= -1;
-		
-	}
+		float inversemass1 = 1.0f / a->GetMass();
+		float inversemass2 = 1.0f / b->GetMass();
 
-	void MutualResolve(p_package* a, p_package* b) {
-		//MOVE FROM CENTER, DONT ACCOUNT FOR MASS
-		t_package* at = a->t;
-		t_package* bt = b->t;
-		glm::vec3 center = (at->GetTranslation() + bt->GetTranslation())/2.0f;
-		glm::vec3 directionvec = LookAtVector(at->GetTranslation(), bt->GetTranslation());
-		at->TranslateTo(center - directionvec * at->GetScale()/2.0f);
-		bt->TranslateTo(center + directionvec * bt->GetScale() / 2.0f);
+		float totalvelocity = glm::dot( - 1 * (1 + a->restitution * b->restitution) * relativevelocity,collisionnormal);
+		//foolish human, i laced yo shit
+		float j = totalvelocity/(inversemass1 + inversemass2 + glm::dot( glm::cross(,collisionnormal) + glm::cross(, collisionnormal), collisionnormal));
+		a->linearvelocity = a->linearvelocity + inversemass1 * j * collisionnormal;
+		b->linearvelocity = b->linearvelocity - inversemass2 * j * collisionnormal;
+
+		float aj;
+
+		if (a->velocity == false) {
+			a->linearvelocity = {0.0f,0.0f,0.0f};
+		}
+		if (b->velocity == false) {
+			a->linearvelocity = { 0.0f,0.0f,0.0f };
+		}
 	}
 
 };

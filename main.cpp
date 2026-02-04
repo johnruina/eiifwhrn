@@ -358,15 +358,6 @@ int main() {
     button->rounding = 0.1f;
     gui.push_back(button);
 
-    TextBox* textbox = new TextBox();
-    textbox->t2d.center = { 1.0f,1.0f };
-    textbox->t2d.position = { 0.5f,0.5f,-10.0f,-10.0f };
-    textbox->t2d.size = { 0.0f,0.0f,100.0f,100.0f };
-    textbox->Color = {0.5f,0.5f,0.5f};
-    textbox->Opacity = 1.0f;
-    textbox->rounding = 0.1f;
-    gui.push_back(textbox);
-
     Texture* magic = new Texture("itsmagicbitch.jpg");
     testgui->tex = magic;
 
@@ -397,6 +388,7 @@ int main() {
     floor->t.ScaleTo({ 100.0f,0.5f,100.0f });
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
     p_package fp(&floor->t);
+    fp.SetMass(1.0f);
     fp.DisableVelocity();
     physicsengine.AddObject(&fp);
     meshes.push_back(floor);
@@ -415,23 +407,24 @@ int main() {
 
         ////////////////////////////////////LOGIC////////////////////////////////////
 
-        std::optional<Mouse::Event> mouseeventbuffer;
-
-        while (mouse.ReadTo(mouseeventbuffer) == true) {
-            Mouse::Event event = mouseeventbuffer.value();
-            if (event.GetType() == Mouse::Event::Type::RPress) {
+        while (Mouse::Event buffer = mouse.Read()) {
+            if (buffer.GetType() == Mouse::Event::Type::RPress) {
                 camera.lockedcursor = not camera.lockedcursor;
-            } else if (event.GetType() == Mouse::Event::Type::LPress) {
+            } else if (buffer.GetType() == Mouse::Event::Type::LPress) {
                 for (Box* box : gui) {
 
                     if (BoxButton* boxe = dynamic_cast<BoxButton*>(box)) {
                         //bitch ass goofy ass y is flipped bleh
                         boxe->UpdateClicked(mouse.GetX(), height - mouse.GetY());
+                        
                     }
                 }
             }
         }
 
+        while (Keyboard::Event buffer = keyboard.ReadKey()) {
+            //read shit here
+        }
         if (keyboard.IsKeyDown('Z')) {
             int initialsize = meshes.size();
             for (int i = 0; i < initialsize; i++) {
@@ -443,15 +436,13 @@ int main() {
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {
 
-            if (cubes.size() > 50) {
-                delete cubes[0];
-                cubes.erase(cubes.begin());
+            if (not (cubes.size() > 20)) {
+                Model* newcube = new Model("cratelookingthing.obj");
+                newcube->t.TranslateTo({ rand() % 2,rand() % 100,rand() % 2 });
+                newcube->AddPhysicsToEngine(physicsengine);
+                newcube->p.angularvelocity = {0.0f,24.0f,0.0f};
+                cubes.push_back(newcube);
             }
-            
-            Model* newcube = new Model("cratelookingthing.obj");
-            newcube->t.TranslateTo({ rand() % 2,rand()%100,rand() % 2 });
-            newcube->AddPhysicsToEngine(physicsengine);
-            cubes.push_back(newcube);
         }
 
         leiheng.t.TranslateTo(camera.t.GetTranslation() + camera.t.GetFrontVector() * 1.0f + camera.t.GetRightVector() * -0.8f);
