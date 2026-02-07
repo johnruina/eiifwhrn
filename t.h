@@ -4,6 +4,7 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <cmath>
 
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
@@ -41,29 +42,23 @@ public:
 			{-0.5f,-0.5f,-0.5f},
 		};
 
-		glm::vec3 min;
-		glm::vec3 max;
-		bool init = false;
+		glm::vec3 min(FLT_MAX);
+		glm::vec3 max(FLT_MIN);
 		for (glm::vec3& corner : corners) {
 			corner *= scale;
 			corner = orient * corner;
 			corner += pos;
-			if (not init) {
-				min = corner;
-				max = corner;
-				init = true;
-			}
-			else {
-				min = { std::min(min.x, corner.x) ,std::min(min.y, corner.y), std::min(min.z, corner.z) };
-				max = { std::max(max.x, corner.x) ,std::max(max.y, corner.y), std::max(max.z, corner.z) };
-			}
-			
-
+			min = { std::min(min.x, corner.x) ,std::min(min.y, corner.y), std::min(min.z, corner.z) };
+			max = { std::max(max.x, corner.x) ,std::max(max.y, corner.y), std::max(max.z, corner.z) };
 		}
 		BoundingBox tr;
 		tr.min = min;
 		tr.max = max;
 		return tr;
+	}
+
+	float SquaredMagnitude() {
+		return scale.x* scale.x + scale.y* scale.y + scale.z* scale.z;
 	}
 
 	BoundingAxis GetBoundingAxis(int axis) {
@@ -78,24 +73,15 @@ public:
 		{-0.5f,-0.5f,-0.5f},
 		};
 
-		float min;
-		float max;
+		float min = FLT_MAX;
+		float max = FLT_MIN;
 		bool init = false;
 		for (glm::vec3& corner : corners) {
 			corner *= scale;
 			corner = orient * corner;
 			corner += pos;
-			if (not init) {
-				min = corner[axis];
-				max = corner[axis];
-				init = true;
-			}
-			else {
-				min =std::min(min, corner[axis]);
-				max =std::max(max, corner[axis]);
-			}
-
-
+			min = std::min(min, corner[axis]);
+			max = std::max(max, corner[axis]);
 		}
 		BoundingAxis tr;
 		tr.min = min;

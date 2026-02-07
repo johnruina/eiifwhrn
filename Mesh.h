@@ -25,6 +25,8 @@ class Mesh {
 protected:
 public:
 	t_package t;
+	p_package p;
+	Physics* bindedphysicsengine;
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
 	std::vector<Texture> textures;
@@ -85,6 +87,22 @@ public:
 		vbo.Delete();
 		ebo.Delete();
 		//delete this;
+	}
+
+	void InitializePhysics() {
+		p.t = &t;
+	}
+
+	void AddPhysicsToEngine(Physics& engine) {
+		engine.AddObject(&p);
+		bindedphysicsengine = &engine;
+	}
+
+	void RemovePhysicsFromEngine() {
+		if (bindedphysicsengine != nullptr) {
+			bindedphysicsengine->RemoveObject(&p);
+			bindedphysicsengine = nullptr;
+		}
 	}
 
 	float GetVolume() const {

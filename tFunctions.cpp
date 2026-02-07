@@ -4,6 +4,21 @@ glm::vec3 CalculateTriangleNormal(Triangle t) {
 	return glm::normalize(glm::cross(t.b - t.a, t.c - t.a));
 }
 
+float Magnitude(const glm::vec3& v) {
+	return pow(pow(v.x,2.0f) + pow(v.y, 2.0f) + pow(v.z, 2.0f), 0.5f);
+}
+
+float SquaredMagnitude(const glm::vec3& v) {
+	return pow(v.x, 2.0f) + pow(v.y, 2.0f) + pow(v.z, 2.0f);
+}
+
+//SQUARED FOR PERFORMANCE REASONS
+float SquaredPerpendicularMagnitude(glm::vec3 off, glm::vec3 line)
+{
+	float offmag = SquaredMagnitude(off);
+	return offmag * (glm::dot(off, line)/ (offmag + SquaredMagnitude(line)));
+}
+
 float VolumeOfTriangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
 	return glm::dot(p1, glm::cross(p2, p3)) / 6.0f;
 }
@@ -59,7 +74,7 @@ std::optional<glm::vec3> IsRayInT(const Ray& ray, t_package t) {
 	return {};
 }
 
-bool IsBoundingBoxInBoundingBox(const BoundingBox bb1, const BoundingBox bb2) {
+bool BoundingBoxInBoundingBox(const BoundingBox bb1, const BoundingBox bb2) {
 	glm::vec3 bb1min = bb1.min;
 	glm::vec3 bb1max = bb1.max;
 	glm::vec3 bb2min = bb2.min;
@@ -67,34 +82,116 @@ bool IsBoundingBoxInBoundingBox(const BoundingBox bb1, const BoundingBox bb2) {
 	return (bb1min[0] < bb2max[0] and bb2min[0] < bb1max[0] and bb1min[1] < bb2max[1] and bb2min[1] < bb1max[1] and bb1min[2] < bb2max[2] and bb2min[2] < bb1max[2]);
 }
 
-bool IsBoundingAxisInBoundingAxis(BoundingAxis ba1, BoundingAxis ba2) {
+bool BoundingAxisInBoundingAxis(BoundingAxis ba1, BoundingAxis ba2) {
 	return ba1.min < ba2.max and ba2.min < ba1.max;
 }
 
-bool TInT(t_package& t1, t_package& t2) {
-	glm::vec3 t1size = t1.GetScale();
-	glm::vec3 t2size = t2.GetScale();
-	glm::vec3 t1pos = t1.GetTranslation();
-	glm::vec3 t2pos = t2.GetTranslation();
-	glm::quat t1conquat = glm::conjugate(t1.GetRotationQuaternion());
-	glm::quat t2conquat = glm::conjugate(t2.GetRotationQuaternion());
+std::optional<std::pair<float,glm::vec3>> TAxisCollidesT(std::vector < glm::vec3 >& t1, std::vector < glm::vec3 >& t2, glm::vec3 axis) {
+	//FIRST RETURN IS OVERLAPPING AREA
+	//SECOND RETURN IS POINT OF COLLISION
+	float min1 = FLT_MAX;
+	float max1 = FLT_MIN;
+	float min2 = FLT_MAX;
+	float max2 = FLT_MIN;
 
+	for (glm::vec3& v : t1) {
+		float perpendicularmag = SquaredPerpendicularMagnitude(v,axis);
+		min1 = glm::min(min1,perpendicularmag);
+		max1 = glm::max(max1, perpendicularmag);
+	}
 
-	glm::vec3 t1posrelative = t1pos - t2pos;
-	glm::vec3 t2posrelative = t2pos - t1pos;
+	for (glm::vec3& v : t2) {
+		float perpendicularmag = SquaredPerpendicularMagnitude(v, axis);
+		min2 = glm::min(min2, perpendicularmag);
+		max2 = glm::max(max2, perpendicularmag);
+	}
+	if (min1 < max2 and min2 < max1) {
+		float overlap = glm::min(max1, max2) - glm::max(min1, min2);
+		float middle = (glm::min(max1, max2) + glm::max(min1, min2)) / 2.0f;
+		return { {overlap, middle * axis} };
+	}
 
-	t_package t1c = t1;
-	t_package t2c = t2;
+}
 
-	t1c.RotateByQuaternion(t2conquat);
-	t1c.TranslateTo(t2conquat * t1posrelative);
-	t2c.RotateByQuaternion(t1conquat);
-	t2c.TranslateTo(t1conquat * t2posrelative);
+bool TNearT(t_package& t1, t_package& t2)
+{
+	glm::vec3 posdif = t1.GetTranslation() - t2.GetTranslation();
+	return t1.SquaredMagnitude() + t2.SquaredMagnitude() > (posdif.x* posdif.x+ posdif.y* posdif.y+ posdif.z* posdif.z) * 2.0f;
+}
 
-	if (not IsBoundingBoxInBoundingBox({ {-t1size[0] / 2.0f,-t1size[1] / 2.0f,-t1size[2] / 2.0f} ,{t1size[0] / 2.0f + t1pos[0],t1size[1] / 2.0f + t1pos[1],t1size[2] / 2.0f + t1pos[2]} }, t2c.GetAABB())) return false;
-	if (not IsBoundingBoxInBoundingBox({ {-t2size[0] / 2.0f,-t2size[1] / 2.0f,-t2size[2] / 2.0f} ,{t2size[0] / 2.0f + t2pos[0],t2size[1] / 2.0f + t2pos[1],t2size[2] / 2.0f + t2pos[2]} }, t1c.GetAABB())) return false;
+std::optional<glm::vec3> TInT(t_package& t1, t_package& t2) {
 
-	return true;
+	//REWRITE SO IT USES CROSS PRODUCT INSTEAD OF ROTATING BUFFERS
+
+	std::vector < glm::vec3 > worldvertices1 = { 
+		{0.5f,0.5f,0.5f},
+		{0.5f,-0.5f,0.5f},
+		{0.5f,0.5f,-0.5f},
+		{0.5f,-0.5f,-0.5f},
+		{-0.5f,0.5f,0.5f},
+		{-0.5f,-0.5f,0.5f},
+		{-0.5f,0.5f,-0.5f},
+		{-0.5f,-0.5f,-0.5f},
+	};
+
+	std::vector < glm::vec3 > worldvertices2 = {
+	{0.5f,0.5f,0.5f},
+	{0.5f,-0.5f,0.5f},
+	{0.5f,0.5f,-0.5f},
+	{0.5f,-0.5f,-0.5f},
+	{-0.5f,0.5f,0.5f},
+	{-0.5f,-0.5f,0.5f},
+	{-0.5f,0.5f,-0.5f},
+	{-0.5f,-0.5f,-0.5f},
+	};
+
+	glm::mat4 t1mat = t1.GetMatrix();
+	glm::mat4 t2mat = t2.GetMatrix();
+
+	for (glm::vec3& v : worldvertices1) {
+		v = glm::vec3(t1mat * glm::vec4(v, 1.0f));
+	}
+	for (glm::vec3& v : worldvertices2) {
+		v = glm::vec3(t2mat * glm::vec4(v, 1.0f));
+	}
+
+	//FIRST 6 AXES
+
+	glm::vec3 fv1 = t1.GetFrontVector();
+	glm::vec3 rv1 = t1.GetRightVector();
+	glm::vec3 uv1 = t1.GetUpVector();
+	glm::vec3 fv2 = t2.GetFrontVector();
+	glm::vec3 rv2 = t2.GetRightVector();
+	glm::vec3 uv2 = t2.GetUpVector();
+
+	glm::vec3 poi = {0.0f,0.0f,0.0f};
+	float lowestoverlap = FLT_MAX;
+
+	std::vector<glm::vec3> axes = {
+		fv1,fv2,uv1,uv2,rv1,rv2,
+		glm::cross(fv1,fv2),
+		glm::cross(fv1, rv2),
+		glm::cross(fv1, uv2),
+		glm::cross(rv1, fv2),
+		glm::cross(rv1, rv2),
+		glm::cross(rv1, uv2),
+		glm::cross(uv1, fv2),
+		glm::cross(uv1, rv2),
+		glm::cross(uv1, uv2)
+	};
+
+	for (glm::vec3 axis : axes) {
+		std::optional<std::pair<float, glm::vec3>> b = TAxisCollidesT(worldvertices1, worldvertices2, axis);
+		if (not b.has_value()) return {};
+
+		if (b.value().first < lowestoverlap) {
+			lowestoverlap = b.value().first;
+			poi = b.value().second;
+		}
+	}
+
+	//FINAL
+	return {poi};
 }
 
 glm::quat AngleAxis(glm::vec3 axis, float angle) {

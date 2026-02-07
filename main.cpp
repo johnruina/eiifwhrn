@@ -347,7 +347,7 @@ int main() {
     testgui->Color = {1.0f,1.0f,1.0f};
     testgui->Opacity = 0.8f;
     testgui->rounding = 0.1f;
-    gui.push_back(testgui);
+    //gui.push_back(testgui);
 
     BoxButton* button = new BoxButton();
     button->t2d.center = { 1.0f,1.0f };
@@ -356,13 +356,14 @@ int main() {
     button->Color = { 1.0f,0.0f,0.0f };
     button->Opacity = 1.0f;
     button->rounding = 0.1f;
-    gui.push_back(button);
+    //gui.push_back(button);
 
     Texture* magic = new Texture("itsmagicbitch.jpg");
-    testgui->tex = magic;
+    //testgui->tex = magic;
 
     Model leiheng("leihengsword.obj");
     leiheng.t.TranslateTo({ 5.0f,4.0f,0.0f });
+    leiheng.t.ScaleBy({1.0f,1.0f,1.0f});
 
     Model testcube = Model("cratelookingthing.obj");
     testcube.t.TranslateTo({ 0.0f,10.0f,0.0f });
@@ -387,10 +388,10 @@ int main() {
     Mesh* floor = CreateCubeMesh();
     floor->t.ScaleTo({ 100.0f,0.5f,100.0f });
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
-    p_package fp(&floor->t);
-    fp.SetMass(1.0f);
-    fp.DisableVelocity();
-    physicsengine.AddObject(&fp);
+    floor->InitializePhysics();
+    floor->AddPhysicsToEngine(physicsengine);
+    floor->p.mass = 1000000.0f;
+    floor->p.velocity = false;
     meshes.push_back(floor);
 
     SkyboxShader.Activate();
@@ -423,7 +424,12 @@ int main() {
         }
 
         while (Keyboard::Event buffer = keyboard.ReadKey()) {
-            //read shit here
+            if (buffer.GetCode() == 'F' and buffer.IsPress()) {
+                Model* newcube = new Model("cratelookingthing.obj");
+                newcube->t.TranslateTo(camera.t.GetTranslation());
+                newcube->AddPhysicsToEngine(physicsengine);
+                cubes.push_back(newcube);
+            }
         }
         if (keyboard.IsKeyDown('Z')) {
             int initialsize = meshes.size();
@@ -433,23 +439,27 @@ int main() {
             }
         }
 
+
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {
 
-            if (not (cubes.size() > 20)) {
+            if (not (cubes.size() > 2)) {
                 Model* newcube = new Model("cratelookingthing.obj");
                 newcube->t.TranslateTo({ rand() % 2,rand() % 100,rand() % 2 });
                 newcube->AddPhysicsToEngine(physicsengine);
-                newcube->p.angularvelocity = {0.0f,24.0f,0.0f};
                 cubes.push_back(newcube);
             }
         }
 
-        leiheng.t.TranslateTo(camera.t.GetTranslation() + camera.t.GetFrontVector() * 1.0f + camera.t.GetRightVector() * -0.8f);
-        leiheng.t.RotateToQuaternion(LookAt(camera.t.GetFrontVector()));
-        leiheng.t.RotateByQuaternionCumulate(glm::quat({0.0f,0.0f,glm::radians((float)frame * 7.0f)}));
+        //leiheng.t.RotateByQuaternionCumulate(glm::quat({0.0f,0.0f,glm::radians((float)frame * 7.0f)}));
 
-        physicsengine.Step(1.0f/60.0f);
+        std::cout << RayIntersectsModel({camera.t.GetTranslation(), camera.t.GetFrontVector() * 10.0f}, leiheng).has_value() << '\n';
+        physicsengine.Step(1.0f / 60.0f);
+        /*
+        if (frame % 2 == 0) {
+            physicsengine.Step(1.0f / 30.0f);
+        }
+        */
 
         ////////////////////////////////////RENDER SCENE////////////////////////////////////
 
@@ -507,12 +517,12 @@ int main() {
             mesh->Render(ShaderProgram);
         }
         
-        leiheng.Render(ShaderProgram);
         testcube.Render(ShaderProgram);
         testcube2.Render(ShaderProgram);
         newcube.Render(ShaderProgram);
         newcube2.Render(ShaderProgram);
         newcube3.Render(ShaderProgram);
+        leiheng.Render(ShaderProgram);
 
         //unbind stuff
         glBindVertexArray(0);

@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <cmath>
+#include <optional>
 
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
@@ -106,10 +107,11 @@ struct CollisionPoints {
 };
 
 struct Collision {
+	glm::vec3 POI; // point of intersection
 	p_package* ObjA;
 	p_package* ObjB;
 
-	Collision(p_package* a, p_package* b) : ObjA(a), ObjB(b) {
+	Collision(p_package* a, p_package* b,glm::vec3 poi) : ObjA(a), ObjB(b) , POI(poi) {
 		
 	};
 };
@@ -148,7 +150,7 @@ public:
 	}
 	void SolveCollisions(std::vector<Collision> collisions,float dt) {
 		for (Collision collision : collisions) {
-			Resolve(collision.ObjA, collision.ObjB);
+			Resolve(&collision);
 		}
 	};
 	void ResolveCollisions(float dt) {
@@ -160,8 +162,11 @@ public:
 
 				if ((a == b) or (b->collision == false) or (not a->velocity and not b->velocity)) continue;
 
-				if (IsBoundingBoxInBoundingBox(a->t->GetAABB(), b->t->GetAABB()) and TInT(*a->t, *b->t)) {
-					collisions.emplace_back(a,b);
+				if (TNearT(*a->t, *b->t) and BoundingBoxInBoundingBox(a->t->GetAABB(), b->t->GetAABB())) {
+					std::optional<glm::vec3> e = TInT(*a->t, *b->t);
+					if (e.has_value()) {
+						collisions.emplace_back(a, b, e.value());
+					}
 				}
 			}
 		}
@@ -169,27 +174,56 @@ public:
 		SolveCollisions(collisions,dt);
 	}
 
-	void Resolve(p_package* a, p_package* b) {
+	void Resolve(Collision* c) {
+
+		p_package* a = c->ObjA;
+		p_package* b = c->ObjB;
+
+		glm::vec3 ascale = a->t->GetScale();
+		glm::vec3 bscale = b->t->GetScale();
+
 		glm::vec3 relativevelocity = a->linearvelocity - b->linearvelocity;
 		glm::vec3 collisionnormal = glm::normalize(b->t->GetTranslation()-a->t->GetTranslation() );
+		collisionnormal = {0.0f,1.0f,0.0f};
+
+		glm::vec3 relativecola = c->POI - a->t->GetTranslation();
+		glm::vec3 relativecolb = c->POI - b->t->GetTranslation();
+
+		constexpr float onedividedbytwelve = 0.08333333333f;
+
+		glm::mat3 inverseinertiatensora(0.0f);
+		inverseinertiatensora[0][0] = onedividedbytwelve * a->mass * (ascale.y* ascale.y + ascale.z * ascale.z);
+		inverseinertiatensora[1][1] = onedividedbytwelve * a->mass * (ascale.x * ascale.x + ascale.z * ascale.z);
+		inverseinertiatensora[2][2] = onedividedbytwelve * a->mass * (ascale.x * ascale.x + ascale.y * ascale.y);
+
+		glm::mat3 inverseinertiatensorb(0.0f);
+		inverseinertiatensorb[0][0] = onedividedbytwelve * b->mass * (bscale.y * bscale.y + bscale.z * bscale.z);
+		inverseinertiatensorb[1][1] = onedividedbytwelve * b->mass * (bscale.x * bscale.x + bscale.z * bscale.z);
+		inverseinertiatensorb[2][2] = onedividedbytwelve * b->mass * (bscale.x * bscale.x + bscale.y * bscale.y);
+
+		inverseinertiatensora = glm::inverse(inverseinertiatensora);
+		inverseinertiatensorb = glm::inverse(inverseinertiatensorb);
+
+		//inverseinertiatensora = 1.0f/inverseinertiatensora;
+		//inverseinertiatensorb = 1.0f / inverseinertiatensorb;
 
 		float inversemass1 = 1.0f / a->GetMass();
 		float inversemass2 = 1.0f / b->GetMass();
 
 		float totalvelocity = glm::dot( - 1 * (1 + a->restitution * b->restitution) * relativevelocity,collisionnormal);
 		//foolish human, i laced yo shit
-		float j = totalvelocity/(inversemass1 + inversemass2 + glm::dot( glm::cross(,collisionnormal) + glm::cross(, collisionnormal), collisionnormal));
-		a->linearvelocity = a->linearvelocity + inversemass1 * j * collisionnormal;
-		b->linearvelocity = b->linearvelocity - inversemass2 * j * collisionnormal;
+		float impulse = totalvelocity / (inversemass1 + inversemass2 + glm::dot( glm::cross(inverseinertiatensora * glm::cross(relativecola,collisionnormal),relativecola) + glm::cross(inverseinertiatensorb * glm::cross(relativecolb, collisionnormal), relativecolb), collisionnormal));
 
-		float aj;
+		if (a->velocity) {
+			a->linearvelocity = a->linearvelocity + inversemass1 * impulse * collisionnormal;
+			a->angularvelocity = a->angularvelocity + impulse * inverseinertiatensora * (glm::cross(relativecola, collisionnormal));
+		}
 
-		if (a->velocity == false) {
-			a->linearvelocity = {0.0f,0.0f,0.0f};
+		if (b->velocity) {
+			b->linearvelocity = b->linearvelocity - inversemass2 * impulse * collisionnormal;
+			b->angularvelocity = b->angularvelocity - impulse * inverseinertiatensorb * (glm::cross(relativecolb, collisionnormal));
 		}
-		if (b->velocity == false) {
-			a->linearvelocity = { 0.0f,0.0f,0.0f };
-		}
+
 	}
 
 };

@@ -58,7 +58,6 @@ public:
 
 		t.RotateByQuaternion(glm::angleAxis(glm::radians(xoffset), glm::vec3(0.0f, 1.0f, 0.0f)));
 		t.RotateByQuaternion(glm::angleAxis(glm::radians(yoffset),t.GetRightVector()));
-		t.RotateToQuaternion(LookAt(t.GetFrontVector()));
 		t.NormalizeRotation();
 		//OPTIMIZATIONS ARE TO BE HAD
 		

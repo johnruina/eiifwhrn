@@ -239,10 +239,6 @@ std::optional<std::vector<glm::vec3>> RayIntersectsModel(const Ray& ray, Model& 
 
 	//convert ray to modelspace
 
-	glm::vec3 modelscale = model.t.GetScale();
-	glm::vec3 modelpos = model.t.GetTranslation();
-	glm::quat modelquat = model.t.GetRotationQuaternion();
-
 	for (Mesh* mesh : model.ReturnMeshes()) {
 
 		glm::mat4 inverse = glm::inverse(model.t.GetMatrix() * mesh->t.GetMatrix());
