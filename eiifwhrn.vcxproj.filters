@@ -117,6 +117,9 @@
     <ClInclude Include="font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Particle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="top.jpg">
@@ -162,7 +165,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\2DText.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\2DText.frag">
+      <Filter>Shaders</Filter>
+    </None>
     <None Include="shaders\ImageBox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\Box.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\Box.vert">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\ImageBox.vert">
@@ -190,18 +205,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\skybox.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Box.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Box.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="2DText.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="2DText.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

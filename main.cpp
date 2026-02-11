@@ -104,6 +104,7 @@
 #include "Mouse.h"
 #include "QuadVertices.h"
 #include "Gui.h"
+#include "Particle.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -119,7 +120,7 @@ bool firstmouse = false;
 Keyboard keyboard;
 Mouse mouse;
 
-void framebuffer_size_callback(GLFWwindow* window, int w, int h)
+static void framebuffer_size_callback(GLFWwindow* window, int w, int h)
 {
     glViewport(0, 0, w, h);
     width = w;
@@ -127,7 +128,7 @@ void framebuffer_size_callback(GLFWwindow* window, int w, int h)
     camera.UpdateWidthHeight(width,height);
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
         keyboard.KeyDown(key);
 
@@ -137,11 +138,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 
 }
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+static void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     mouse.OnMouseMove(static_cast<float>(xposIn), static_cast<float>(yposIn));
     if (camera.lockedcursor) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -170,7 +171,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
     }
 }
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
         if (action == GLFW_PRESS) mouse.RightDown();
@@ -181,7 +182,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 
-void ProcessInputs(GLFWwindow* window) {
+static void ProcessInputs(GLFWwindow* window) {
 
     if (keyboard.IsKeyDown(GLFW_KEY_ESCAPE)) {
         glfwSetWindowShouldClose(window, 1);
@@ -316,6 +317,7 @@ int main() {
     std::vector<Model*> cubes = {};
     std::vector<Mesh*> meshes = {};
     std::vector<Box*> gui = {};
+    std::vector<ParticleEmitter*> pes;
     //EVENTUALLY CONVERGE INTO ONE FOLDER
 
     //game logic and shit
@@ -331,6 +333,9 @@ int main() {
 
     //STUFF
 
+    ParticleEmitter* pe = new ParticleEmitter();
+    pe->t.TranslateTo({0.0f,2.0f,2.0f});
+    pes.push_back(pe);
 
     Box* crosshair = new Box();
     crosshair->Color = {0.0f,0.0f,0.0f};
@@ -347,50 +352,21 @@ int main() {
     testgui->Color = {1.0f,1.0f,1.0f};
     testgui->Opacity = 0.8f;
     testgui->rounding = 0.1f;
-    //gui.push_back(testgui);
-
-    BoxButton* button = new BoxButton();
-    button->t2d.center = { 1.0f,1.0f };
-    button->t2d.position = { 1.0f,1.0f,-10.0f,-10.0f };
-    button->t2d.size = { 0.0f,0.0f,100.0f,100.0f };
-    button->Color = { 1.0f,0.0f,0.0f };
-    button->Opacity = 1.0f;
-    button->rounding = 0.1f;
-    //gui.push_back(button);
+    gui.push_back(testgui);
 
     Texture* magic = new Texture("itsmagicbitch.jpg");
-    //testgui->tex = magic;
+    testgui->tex = magic;
 
     Model leiheng("leihengsword.obj");
     leiheng.t.TranslateTo({ 5.0f,4.0f,0.0f });
     leiheng.t.ScaleBy({1.0f,1.0f,1.0f});
 
-    Model testcube = Model("cratelookingthing.obj");
-    testcube.t.TranslateTo({ 0.0f,10.0f,0.0f });
-    testcube.AddPhysicsToEngine(physicsengine);
-
-    Model testcube2 = Model("cratelookingthing.obj");
-    testcube2.t.TranslateTo({ 10.0f,100.0f,0.0f });
-    testcube2.AddPhysicsToEngine(physicsengine);
-
-    Model newcube("cratelookingthing.obj");
-    newcube.t.TranslateTo({ 0.0f,rand() % 100,0.0f });
-    newcube.AddPhysicsToEngine(physicsengine);
-
-    Model newcube2("cratelookingthing.obj");
-    newcube2.t.TranslateTo({ 0.0f,rand() % 100,0.0f });
-    newcube2.AddPhysicsToEngine(physicsengine);
-
-    Model newcube3("cratelookingthing.obj");
-    newcube3.t.ScaleTo({ 2.0f,2.0f,2.0f });
-    newcube3.t.TranslateTo({ 7.0f,4.0f,0.0f });
-
     Mesh* floor = CreateCubeMesh();
-    floor->t.ScaleTo({ 100.0f,0.5f,100.0f });
+    floor->t.ScaleTo({ 10.0f,0.4f,10.0f });
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
     floor->InitializePhysics();
     floor->AddPhysicsToEngine(physicsengine);
-    floor->p.mass = 1000000.0f;
+    floor->p.mass = 5000.0f;
     floor->p.velocity = false;
     meshes.push_back(floor);
 
@@ -400,7 +376,7 @@ int main() {
     //LOOP
     while (!glfwWindowShouldClose(window))
     {
-        ////////////////////////////////////START OF LOOP////////////////////////////////////
+        ////////////////////////////////////START OF LOOP///////////////////////////////////
         frame++;
         
         //INPUTS
@@ -434,26 +410,32 @@ int main() {
         if (keyboard.IsKeyDown('Z')) {
             int initialsize = meshes.size();
             for (int i = 0; i < initialsize; i++) {
-                OutputVec3(glm::eulerAngles(camera.t.GetRotationQuaternion()));
                 meshes[i]->Slice(camera.t.GetTranslation(), camera.t.GetRotationQuaternion(), meshes);
             }
         }
+        if (keyboard.IsKeyDown('R')) {
+            pe->t.TranslateTo(camera.t.GetTranslation());
+            pe->t.RotateToQuaternion(camera.t.GetRotationQuaternion());
+            pe->Emit();
 
+        }
 
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {
-
+            /*
             if (not (cubes.size() > 2)) {
                 Model* newcube = new Model("cratelookingthing.obj");
                 newcube->t.TranslateTo({ rand() % 2,rand() % 100,rand() % 2 });
                 newcube->AddPhysicsToEngine(physicsengine);
                 cubes.push_back(newcube);
             }
+            */
+        }
+        
+        for (ParticleEmitter* pe : pes) {
+            pe->Step(1/60.0f);
         }
 
-        //leiheng.t.RotateByQuaternionCumulate(glm::quat({0.0f,0.0f,glm::radians((float)frame * 7.0f)}));
-
-        std::cout << RayIntersectsModel({camera.t.GetTranslation(), camera.t.GetFrontVector() * 10.0f}, leiheng).has_value() << '\n';
         physicsengine.Step(1.0f / 60.0f);
         /*
         if (frame % 2 == 0) {
@@ -516,14 +498,14 @@ int main() {
         for (Mesh* mesh : meshes) {
             mesh->Render(ShaderProgram);
         }
-        
-        testcube.Render(ShaderProgram);
-        testcube2.Render(ShaderProgram);
-        newcube.Render(ShaderProgram);
-        newcube2.Render(ShaderProgram);
-        newcube3.Render(ShaderProgram);
-        leiheng.Render(ShaderProgram);
 
+        leiheng.Render(ShaderProgram);
+        
+        glDisable(GL_CULL_FACE);
+        for (ParticleEmitter* pe : pes) {
+            pe->Render(ShaderProgram);
+        }
+        glEnable(GL_CULL_FACE);
         //unbind stuff
         glBindVertexArray(0);
 

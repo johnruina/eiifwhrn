@@ -110,7 +110,64 @@ std::optional<std::pair<float,glm::vec3>> TAxisCollidesT(std::vector < glm::vec3
 		float middle = (glm::min(max1, max2) + glm::max(min1, min2)) / 2.0f;
 		return { {overlap, middle * axis} };
 	}
+}
 
+bool TAxisCollidesTNoInfo(std::vector < glm::vec3 >& t1, std::vector < glm::vec3 >& t2, glm::vec3 axis) {
+	//FIRST RETURN IS OVERLAPPING AREA
+	//SECOND RETURN IS POINT OF COLLISION
+	float min1 = FLT_MAX;
+	float max1 = FLT_MIN;
+	float min2 = FLT_MAX;
+	float max2 = FLT_MIN;
+
+	for (glm::vec3& v : t1) {
+		float perpendicularmag = SquaredPerpendicularMagnitude(v, axis);
+		min1 = glm::min(min1, perpendicularmag);
+		max1 = glm::max(max1, perpendicularmag);
+	}
+
+	for (glm::vec3& v : t2) {
+		float perpendicularmag = SquaredPerpendicularMagnitude(v, axis);
+		min2 = glm::min(min2, perpendicularmag);
+		max2 = glm::max(max2, perpendicularmag);
+	}
+	if (min1 < max2 and min2 < max1) {
+		return true;
+	}
+	return false;
+}
+
+std::optional<AxisCollisionCN> TAxisCollidesTCN(std::vector < glm::vec3 >& t1, std::vector < glm::vec3 >& t2, glm::vec3 axis) {
+	//FIRST RETURN IS OVERLAPPING AREA
+	//SECOND RETURN IS POINT OF COLLISION
+	float min1 = FLT_MAX;
+	float max1 = FLT_MIN;
+	float min2 = FLT_MAX;
+	float max2 = FLT_MIN;
+
+	for (glm::vec3& v : t1) {
+		float perpendicularmag = SquaredPerpendicularMagnitude(v, axis);
+		min1 = glm::min(min1, perpendicularmag);
+		max1 = glm::max(max1, perpendicularmag);
+	}
+
+	for (glm::vec3& v : t2) {
+		float perpendicularmag = SquaredPerpendicularMagnitude(v, axis);
+		min2 = glm::min(min2, perpendicularmag);
+		max2 = glm::max(max2, perpendicularmag);
+	}
+	if (min1 < max2 and min2 < max1) {
+		float overlap = glm::min(max1, max2) - glm::max(min1, min2);
+		float middle = (glm::min(max1, max2) + glm::max(min1, min2)) / 2.0f;
+
+		AxisCollisionCN accn;
+		accn.infront = (min1+max1)/2.0f > (min2+max2)/2.0f;
+		accn.POI = axis * middle;
+		accn.overlap = overlap;
+
+		return {accn};
+	}
+	return {};
 }
 
 bool TNearT(t_package& t1, t_package& t2)
@@ -119,9 +176,72 @@ bool TNearT(t_package& t1, t_package& t2)
 	return t1.SquaredMagnitude() + t2.SquaredMagnitude() > (posdif.x* posdif.x+ posdif.y* posdif.y+ posdif.z* posdif.z) * 2.0f;
 }
 
-std::optional<glm::vec3> TInT(t_package& t1, t_package& t2) {
+bool TInTNoInfo(t_package& t1, t_package& t2) {
+	std::vector < glm::vec3 > worldvertices1 = {
+	{0.5f,0.5f,0.5f},
+	{0.5f,-0.5f,0.5f},
+	{0.5f,0.5f,-0.5f},
+	{0.5f,-0.5f,-0.5f},
+	{-0.5f,0.5f,0.5f},
+	{-0.5f,-0.5f,0.5f},
+	{-0.5f,0.5f,-0.5f},
+	{-0.5f,-0.5f,-0.5f},
+	};
 
-	//REWRITE SO IT USES CROSS PRODUCT INSTEAD OF ROTATING BUFFERS
+	std::vector < glm::vec3 > worldvertices2 = {
+	{0.5f,0.5f,0.5f},
+	{0.5f,-0.5f,0.5f},
+	{0.5f,0.5f,-0.5f},
+	{0.5f,-0.5f,-0.5f},
+	{-0.5f,0.5f,0.5f},
+	{-0.5f,-0.5f,0.5f},
+	{-0.5f,0.5f,-0.5f},
+	{-0.5f,-0.5f,-0.5f},
+	};
+
+	glm::mat4 t1mat = t1.GetMatrix();
+	glm::mat4 t2mat = t2.GetMatrix();
+
+	for (glm::vec3& v : worldvertices1) {
+		v = glm::vec3(t1mat * glm::vec4(v, 1.0f));
+	}
+	for (glm::vec3& v : worldvertices2) {
+		v = glm::vec3(t2mat * glm::vec4(v, 1.0f));
+	}
+
+	//FIRST 6 AXES
+
+	glm::vec3 fv1 = t1.GetFrontVector();
+	glm::vec3 rv1 = t1.GetRightVector();
+	glm::vec3 uv1 = t1.GetUpVector();
+	glm::vec3 fv2 = t2.GetFrontVector();
+	glm::vec3 rv2 = t2.GetRightVector();
+	glm::vec3 uv2 = t2.GetUpVector();
+
+	std::vector<glm::vec3> axes = {
+		fv1,fv2,uv1,uv2,rv1,rv2,
+		glm::cross(fv1,fv2),
+		glm::cross(fv1, rv2),
+		glm::cross(fv1, uv2),
+		glm::cross(rv1, fv2),
+		glm::cross(rv1, rv2),
+		glm::cross(rv1, uv2),
+		glm::cross(uv1, fv2),
+		glm::cross(uv1, rv2),
+		glm::cross(uv1, uv2)
+	};
+
+	for (glm::vec3 axis : axes) {
+		if (not TAxisCollidesTNoInfo(worldvertices1, worldvertices2, axis)) return false;
+	}
+
+	//FINAL
+	return true;
+}
+
+std::optional<TInTInfo> TInT(t_package& t1, t_package& t2) {
+
+	//FIRST IS POI, SECOND IS COLNORMAL
 
 	std::vector < glm::vec3 > worldvertices1 = { 
 		{0.5f,0.5f,0.5f},
@@ -167,8 +287,30 @@ std::optional<glm::vec3> TInT(t_package& t1, t_package& t2) {
 	glm::vec3 poi = {0.0f,0.0f,0.0f};
 	float lowestoverlap = FLT_MAX;
 
+	glm::vec3 cn = { 0.0f,0.0f,0.0f };
+	float cnlowestoverlap = FLT_MAX;
+
+	std::vector<glm::vec3> vectoraxes = {
+		fv1,uv1,rv1
+	};
+
+	for (glm::vec3& axis : vectoraxes) {
+		std::optional<AxisCollisionCN> b = TAxisCollidesTCN(worldvertices1, worldvertices2, axis);
+		if (not b.has_value()) return {};
+
+		if (b.value().overlap < lowestoverlap) {
+			lowestoverlap = b.value().overlap;
+			poi = b.value().POI;
+		}
+
+		if (b.value().overlap < cnlowestoverlap) {
+			cnlowestoverlap = b.value().overlap;
+			cn = axis * ((b.value().infront) ? 1.0f : -1.0f);
+		}
+	}
+
 	std::vector<glm::vec3> axes = {
-		fv1,fv2,uv1,uv2,rv1,rv2,
+		fv2,uv2,rv2,
 		glm::cross(fv1,fv2),
 		glm::cross(fv1, rv2),
 		glm::cross(fv1, uv2),
@@ -180,7 +322,7 @@ std::optional<glm::vec3> TInT(t_package& t1, t_package& t2) {
 		glm::cross(uv1, uv2)
 	};
 
-	for (glm::vec3 axis : axes) {
+	for (glm::vec3& axis : axes) {
 		std::optional<std::pair<float, glm::vec3>> b = TAxisCollidesT(worldvertices1, worldvertices2, axis);
 		if (not b.has_value()) return {};
 
@@ -190,8 +332,12 @@ std::optional<glm::vec3> TInT(t_package& t1, t_package& t2) {
 		}
 	}
 
+	TInTInfo tr;
+	tr.POI = poi;
+	tr.CN = cn;
+
 	//FINAL
-	return {poi};
+	return tr;
 }
 
 glm::quat AngleAxis(glm::vec3 axis, float angle) {
@@ -249,11 +395,14 @@ glm::quat RotationBetweenVectors(glm::vec3 start, glm::vec3 dest) {
 }
 
 glm::quat LookAt(glm::vec3 direction) {
-	glm::quat rot1 = RotationBetweenVectors(glm::vec3(0.0f, 0.0f, 1.0f), direction);
+
+	glm::vec3 normdir = glm::normalize(direction);
+
+	glm::quat rot1 = RotationBetweenVectors(glm::vec3(0.0f, 0.0f, 1.0f), normdir);
 
 	glm::vec3 desiredUp = { 0.0f,1.0f,0.0f };
-	glm::vec3 right = cross(direction, desiredUp);
-	desiredUp = cross(right, direction);
+	glm::vec3 right = cross(normdir, desiredUp);
+	desiredUp = cross(right, normdir);
 
 	// Because of the 1rst rotation, the up is probably completely screwed up.
 	// Find the rotation between the "up" of the rotated object, and the desired up

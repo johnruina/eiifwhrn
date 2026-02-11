@@ -171,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="font.h" />
     <ClInclude Include="Gui.h" />
+    <ClInclude Include="Particle.h" />
     <ClInclude Include="Physics.h" />
     <ClInclude Include="QuadVertices.h" />
     <ClInclude Include="Structures.h" />
@@ -207,10 +208,10 @@
     <Image Include="top.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="2DText.frag" />
-    <None Include="2DText.vert" />
-    <None Include="Box.frag" />
-    <None Include="Box.vert" />
+    <None Include="shaders\2DText.frag" />
+    <None Include="shaders\2DText.vert" />
+    <None Include="shaders\Box.frag" />
+    <None Include="shaders\Box.vert" />
     <None Include="shaders\DebugCube.frag" />
     <None Include="shaders\DebugCube.vert" />
     <None Include="shaders\default.frag" />
