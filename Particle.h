@@ -3,9 +3,11 @@
 
 #include <random>
 #include <vector>
+#include <map>
 
 #include<glm/glm.hpp>
 
+#include "Mesh.h"
 #include "QuadVertices.h"
 #include "t.h"
 #include "VAO.h"
@@ -13,7 +15,8 @@
 #include "EBO.h"
 #include "shaderClass.h"
 #include "Vertex.h"
-
+#include "texture.h"
+#include "Camera.h"
 
 class Particle {
 public:
@@ -29,77 +32,126 @@ public:
 	}
 
 	void Step(float dt) {
+		t.RotateByEulerAnglesCumulate(angularvelocity * dt);
 		t.TranslateBy(linearvelocity*dt);
 	}
 	glm::vec3 linearvelocity;
-
+	glm::vec3 angularvelocity;
+	float lifespan;
 private:
 };
 
 class ParticleEmitter {
 public:
 
+	enum EmitDirection {
+		Perpendicular,
+		Aligned,
+		Outward
+	};
+
+	EmitDirection emitdirection = Outward;
+	//PARTICLE SETTINGS
+	glm::vec3 size = {1.0f,1.0f,1.0f};
+	glm::vec3 emitangle = {0.0f,0.0f,0.0f};
+	float lifespan = 5.0f;
+	float speed = 1.0f;
+	glm::vec3 angularvelocity = {0.0f,0.0f,0.0f};
+	bool facecamera = false;
+
+	glm::vec4 color = {1.0f,1.0f,1.0f,1.0f};
+
+public:
+
 	t_package t;
 	
 	std::vector<Particle*> particles;
 
-	std::vector<Vertex> vertices;
-	std::vector<GLuint> indices;
+	Texture* tex;
 
-	VAO vao;
-	VBO vbo;
-	EBO ebo;
-
+	Mesh mesh;
+	
 	ParticleEmitter() {
-		vertices = quadVertices3D;
-		indices = quadIndices3D;
+		mesh.InitializeMesh(quadVertices3D, quadIndices3D);
+	}
 
-		vbo.BufferData(&vertices[0], vertices.size() * sizeof(Vertex));
-		ebo.BufferData(&indices[0], indices.size() * sizeof(GLuint));
-
-		vbo.Bind();
-		ebo.Bind();
-
-		vao.LinkVBO(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
-		vao.LinkVBO(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-		vao.LinkVBO(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-
-		vao.Unbind();
-		vbo.Unbind();
-		ebo.Unbind();
+	ParticleEmitter(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
+		mesh.InitializeMesh(meshvertices, meshindices);
 	}
 
 	void Emit() {
 		Particle* np = new Particle();
-
+		glm::quat rot = glm::quat(glm::vec3({ (float)rand() / (float)RAND_MAX * emitangle[0] - emitangle[0] / 2.0f,(float)rand() / (float)RAND_MAX * emitangle[1] - emitangle[1] / 2.0f,(float)rand() / RAND_MAX * emitangle[2] - emitangle[2] / 2.0f }));
 		np->t.TranslateTo(t.GetTranslation());
-		std::cout << t.GetFrontVector().x << ' ' << t.GetFrontVector().y << ' ' << t.GetFrontVector().z << '\n';
-		np->linearvelocity = t.GetFrontVector() * float(rand() % 200) / 50.0f;
-		//np->linearvelocity = np->linearvelocity * glm::quat({ glm::radians(float(rand() % 30)) - 15.0f,glm::radians(float(rand() % 30)) - 15.0f,glm::radians(float(rand() % 30)) - 15.0f });
-		np->t.ScaleTo({0.2f,0.2f,0.0f});
-		np->t.RotateToQuaternion(t.GetRotationQuaternion());
-		
+		np->linearvelocity = (t.GetFrontVector() * speed) * rot;	
+		np->angularvelocity = angularvelocity;
+		np->t.ScaleTo(size);
+
+		if (emitdirection == Perpendicular) {
+			np->t.RotateToQuaternion(glm::conjugate(rot) * glm::quat({ glm::radians(90.0f),0.0f,0.0f }) * t.GetRotationQuaternion());
+		}
+		else if (emitdirection == Outward) {
+			np->t.RotateToQuaternion(glm::conjugate(rot) * t.GetRotationQuaternion());
+		}
+		else {
+			np->t.RotateToQuaternion(t.GetRotationQuaternion());
+		}
+
+		np->lifespan = lifespan;
 
 		particles.push_back(np);
 	}
 
 	void Step(float dt) {
-		for (Particle* p : particles) {
-			p->Step(dt);
+		for (auto it = particles.begin(); it != particles.end(); ) {
+			Particle* p = *it;
+			p->lifespan -= dt;
+
+			if (p->lifespan <= 0.0f) {
+				delete p;
+				it = particles.erase(it);
+			}
+			else {
+				p->Step(dt);
+				++it;
+			}
 		}
 	}
 
-	void Render(Shader ShaderProgram) {
+	void Render(Shader ShaderProgram, Camera& camera) {
 
 		ShaderProgram.Activate();
 
-		vao.Bind();
+		mesh.vao.Bind();
 
-		for (Particle* p: particles) {
-			ShaderProgram.SetMat4("modl", p->t.GetMatrix());
-			glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+		ShaderProgram.Set4F("color",color);
+
+		glActiveTexture(0);
+
+		if (tex != nullptr) {
+			glBindTexture(GL_TEXTURE_2D, tex->ID);
+			ShaderProgram.SetInt("tex", 0);
 		}
-		vao.Unbind();
+		else glBindTexture(GL_TEXTURE_2D, 0);
+
+		std::map<float, Particle*> sorted;
+		for (unsigned int i = 0; i < particles.size(); i++)
+		{
+			float distance = glm::length(camera.t.GetTranslation() - particles[i]->t.GetTranslation());
+			sorted[distance] = particles[i];
+		}
+
+		for (std::map<float, Particle*>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+		{
+			if (facecamera) {
+				ShaderProgram.SetMat4("modl", it->second->t.GetTranslationMatrix() * camera.t.GetRotationMatrix() * it->second->t.GetScaleMatrix());
+			}
+			else {
+				ShaderProgram.SetMat4("modl", it->second->t.GetMatrix());
+			}
+			glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+		}
+		mesh.vao.Unbind();
 	}
 
 private:

@@ -11,6 +11,8 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
+#include "RenderSystem.h"
+#include "Object.h"
 #include "VAO.h"
 #include "VBO.h"
 #include "EBO.h"
@@ -20,7 +22,7 @@
 #include "Vertex.h"
 #include "texture.h"
 
-class Mesh {
+class Mesh : public Object , public Renderable {
 	friend class Model;
 protected:
 public:
@@ -35,12 +37,22 @@ public:
 	EBO ebo;
 
 	//DO NOT MAKE A MESH WITH A ZERO IN SCALE PRETTY PLEASE OR ELSE ITLL FRY A BUNCHA MATH AND FEATURES
-	Mesh(std::vector<Vertex>& meshvertices, std::vector<GLuint>& meshindices/*, std::vector<Texture> textures*/) :
+
+	Mesh() {
+
+	};
+
+	Mesh(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices/*, std::vector<Texture> textures*/) :
 		vertices(meshvertices),
 		indices(meshindices)
 		//textures(textures)
 	{
-		//NormalizeVertices();
+		InitializeMesh(meshvertices,meshindices);
+	};
+
+	void InitializeMesh(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
+		vertices = meshvertices;
+		indices = meshindices;
 		vbo.BufferData(&vertices[0], vertices.size() * sizeof(Vertex));
 		ebo.BufferData(&indices[0], indices.size() * sizeof(GLuint));
 
@@ -54,7 +66,10 @@ public:
 		vao.Unbind();
 		vbo.Unbind();
 		ebo.Unbind();
-	};
+
+		NormalizeVertices();
+		UpdateVertices();
+	}
 
 	Mesh(const Mesh& other) {
 
@@ -199,58 +214,39 @@ public:
 	}
 
 	void NormalizeVertices() {
-		float biggestx;
-		float smallestx;
-		float biggesty;
-		float smallesty;
-		float biggestz;
-		float smallestz;
-		bool initalized = false;
-
+		float biggestx = FLT_MIN;
+		float smallestx = FLT_MAX;
+		float biggesty = FLT_MIN;
+		float smallesty = FLT_MAX;
+		float biggestz = FLT_MIN;
+		float smallestz = FLT_MAX;
 		for (Vertex& vertex : vertices) {
-			if (not initalized) {
-				biggestx = vertex.Position.x;
-				smallestx = vertex.Position.x;
-				biggesty = vertex.Position.y;
-				smallesty = vertex.Position.y;
-				biggestz = vertex.Position.z;
-				smallestz = vertex.Position.z;
 
-				initalized = true;
-			}
-			else {
-				biggestx = std::max(biggestx, vertex.Position.x);
-				smallestx = std::min(smallestx, vertex.Position.x);
-				biggesty = std::max(biggesty, vertex.Position.y);
-				smallesty = std::min(smallesty, vertex.Position.y);
-				biggestz = std::max(biggestz, vertex.Position.z);
-				smallestz = std::min(smallestz, vertex.Position.z);
-			}
-		}
-		
-
-		if (not initalized) {
-			std::cout << "NO VERTICES";
-		}
-		else {
-			t.ScaleBy(glm::vec3(biggestx - smallestx, biggesty - smallesty, biggestz - smallestz));
-			float midx = (biggestx + smallestx) / 2.0f;
-			float midy = (biggesty + smallesty) / 2.0f;
-			float midz = (biggestz + smallestz) / 2.0f;
-			float xf = biggestx - smallestx;
-			float yf = biggesty - smallesty;
-			float zf = biggestz - smallestz;
-			t.TranslateTo({midx,midy,midz});
-			for (Vertex& vertex : vertices) {
-				vertex.Position = glm::vec3(
-					(vertex.Position.x - midx) / xf,
-					(vertex.Position.y - midy) / yf,
-					(vertex.Position.z - midz) / zf
-				);
-			}
-			UpdateVertices();
+			biggestx = std::max(biggestx, vertex.Position.x);
+			smallestx = std::min(smallestx, vertex.Position.x);
+			biggesty = std::max(biggesty, vertex.Position.y);
+			smallesty = std::min(smallesty, vertex.Position.y);
+			biggestz = std::max(biggestz, vertex.Position.z);
+			smallestz = std::min(smallestz, vertex.Position.z);
+			
 		}
 
+		t.ScaleBy(glm::vec3(biggestx - smallestx, biggesty - smallesty, biggestz - smallestz));
+
+		float midx = (biggestx + smallestx) / 2.0f;
+		float midy = (biggesty + smallesty) / 2.0f;
+		float midz = (biggestz + smallestz) / 2.0f;
+		float xf = biggestx - smallestx;
+		float yf = biggesty - smallesty;
+		float zf = biggestz - smallestz;
+		t.TranslateTo({midx,midy,midz});
+		for (Vertex& vertex : vertices) {
+			vertex.Position = glm::vec3(
+				(vertex.Position.x - midx) / xf,
+				(vertex.Position.y - midy) / yf,
+				(vertex.Position.z - midz) / zf
+			);
+		}
 	}
 
 	virtual void Render(Shader& ShaderProgram, glm::mat4 modlmatrix) {
@@ -290,7 +286,7 @@ public:
 		vao.Unbind();
 	};
 
-	virtual void Render(Shader& ShaderProgram) {
+	void Render(Shader& ShaderProgram) override {
 		glm::mat4 topass = t.GetMatrix();
 		/*
 		unsigned int diffuseNr = 1;
@@ -342,5 +338,28 @@ private:
 
 };
 
+std::optional<std::vector<glm::vec3>> RayIntersectsMesh(const Ray& ray, Mesh& mesh)
+{
+	//USE THIS AFTER A CHEAPER CHECK
+	std::vector<glm::vec3> intersections = {};
+
+	glm::mat4 inverse = glm::inverse(mesh.t.GetMatrix());
+	glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
+	glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
+
+	for (int i = 0; i < mesh.indices.size() / 3; i++) {
+		std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh.vertices[mesh.indices[i * 3]].Position, mesh.vertices[mesh.indices[i * 3 + 1]].Position,mesh.vertices[mesh.indices[i * 3 + 2]].Position });
+		if (intersection.has_value()) {
+			intersections.push_back(intersection.value());
+		}
+	}
+	
+	if (intersections.size() > 0) return intersections;
+	else return {};
+}
+
+void DivideFace() {
+
+}
 
 #endif

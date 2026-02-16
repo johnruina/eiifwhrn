@@ -14,6 +14,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "RenderSystem.h"
+#include "Object.h"
 #include "VAO.h"
 #include "VBO.h"
 #include "EBO.h"
@@ -23,14 +25,14 @@
 #include "Mesh.h"
 #include "Physics.h"
 
-class Model {
+class Model : public Object, public Renderable {
 public:
 	t_package t;
 	p_package p;
 	Physics* bindedphysicsengine;
 	Model(const char* path) {
 		LoadModel(path);
-		NormalizeVertices();
+		//NormalizeVertices();
 		p.t = &t;
 	}
 	
@@ -74,7 +76,7 @@ public:
 		}
 	}
 
-	void Render(Shader& shader)
+	void Render(Shader& shader) override
 	{
 		for (unsigned int i = 0; i < meshes.size(); i++) {
 			meshes[i].Render(shader,t.GetMatrix());
@@ -150,8 +152,7 @@ private:
 				}
 				mesh.UpdateVertices();
 			}
-			
-			//std::cout << biggestx - smallestx << ' ' << biggesty - smallesty << ' ' << biggestz - smallestz << '\n';
+		
 		}
 
 	}
@@ -239,6 +240,7 @@ std::optional<std::vector<glm::vec3>> RayIntersectsModel(const Ray& ray, Model& 
 
 	//convert ray to modelspace
 
+	int ie = 0;
 	for (Mesh* mesh : model.ReturnMeshes()) {
 
 		glm::mat4 inverse = glm::inverse(model.t.GetMatrix() * mesh->t.GetMatrix());
@@ -248,9 +250,11 @@ std::optional<std::vector<glm::vec3>> RayIntersectsModel(const Ray& ray, Model& 
 		for (int i = 0; i < mesh->indices.size() / 3; i++) {
 			std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[ i * 3]].Position, mesh->vertices[mesh->indices[i * 3+1]].Position,mesh->vertices[mesh->indices[i * 3+2]].Position });
 			if (intersection.has_value()) {
+				std::cout << ie << '\n';
 				intersections.push_back(intersection.value());
 			}
 		}
+		ie++;
 	}
 	if (intersections.size() > 0) return intersections;
 	else return {};

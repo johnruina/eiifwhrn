@@ -28,6 +28,7 @@ std::vector<unsigned int> quadIndices3D = {
 	0,1,2,
 	0,2,3,
 };
+
 float quadVerticesNoTexCoords[] = { 
 	// positions  
 	-1.0f,  1.0f, 

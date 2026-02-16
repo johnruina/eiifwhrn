@@ -84,6 +84,7 @@
 #include FT_FREETYPE_H  
 
 //MANMADE LIBRARIES
+#include "Folder.h"
 #include "Physics.h"
 #include "font.h"
 #include "Camera.h"
@@ -105,12 +106,14 @@
 #include "QuadVertices.h"
 #include "Gui.h"
 #include "Particle.h"
+#include "RenderSystem.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 int height = 720;
 int width = 1280;
+int fps = 60;
 float lastX = width / 2.0f;
 float lastY = height / 2.0f;
 
@@ -243,14 +246,26 @@ int main() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
     //SHADERS
-    Shader SkyboxShader("shaders/skybox.vert","shaders/skybox.frag");
-    Shader ShaderProgram("shaders/default.vert", "shaders/default.frag");
-    Shader ScreenShader("shaders/ScreenShader.vert", "shaders/ScreenShader.frag");
-    Shader ImageBoxShader("shaders/ImageBox.vert", "shaders/ImageBox.frag");
-    Shader BoxShader("shaders/Box.vert", "shaders/Box.frag");
-    Shader Text2DShader("shaders/2DText.vert", "shaders/2DText.frag");
+    //nonrendersystem shaders
+    Shader* SkyboxShader = new Shader("shaders/skybox.vert","shaders/skybox.frag");
+    Shader* ScreenShader = new Shader("shaders/ScreenShader.vert", "shaders/ScreenShader.frag");
+
+    //rendersystem shaders
+    Shader* MeshShader = new Shader("shaders/default.vert", "shaders/default.frag");
+    Shader* ImageBoxShader = new Shader("shaders/ImageBox.vert", "shaders/ImageBox.frag");
+    Shader* BoxShader = new Shader("shaders/Box.vert", "shaders/Box.frag");
+    Shader* Text2DShader = new Shader("shaders/2DText.vert", "shaders/2DText.frag");
+    Shader* ParticleShader = new Shader("shaders/Particle.vert", "shaders/Particle.frag");
     
+    RenderSystem rs;
+    rs.BoxShader = BoxShader;
+    rs.MeshShader = MeshShader;
+    rs.ImageBoxShader = ImageBoxShader;
+    rs.Text2DShader = Text2DShader;
+    rs.ParticleShader = ParticleShader;
+
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
     glGenBuffers(1, &skyboxVBO);
@@ -314,6 +329,7 @@ int main() {
     Font* arial = new Font(arialdirectory.c_str());
 
     //FOLDERS
+    Folder mainf;
     std::vector<Model*> cubes = {};
     std::vector<Mesh*> meshes = {};
     std::vector<Box*> gui = {};
@@ -333,7 +349,20 @@ int main() {
 
     //STUFF
 
-    ParticleEmitter* pe = new ParticleEmitter();
+    ParticleEmitter* snow = new ParticleEmitter;
+    snow->t.TranslateTo({ 0.0f,10.0f,0.0f });
+    snow->t.RotateToQuaternion(glm::quat(glm::vec3(glm::radians(90.0f),0.0f, 0.0f)));
+    snow->speed = 30.0f;
+    snow->lifespan = 2.0f;
+    snow->angularvelocity = {0.0f,0.0f,glm::radians(10.0f)};
+    snow->size = {0.04f,0.4f,0.0f};
+    snow->emitangle = {glm::radians(60.0f),glm::radians(60.0f) ,glm::radians(60.0f) };
+    snow->facecamera = false;
+    snow->color = {1.0f,1.0f,1.0f,1.0f};
+    snow->emitdirection = ParticleEmitter::EmitDirection::Perpendicular;
+    pes.push_back(snow);
+
+    ParticleEmitter* pe = new ParticleEmitter;
     pe->t.TranslateTo({0.0f,2.0f,2.0f});
     pes.push_back(pe);
 
@@ -341,8 +370,8 @@ int main() {
     crosshair->Color = {0.0f,0.0f,0.0f};
     crosshair->t2d.center = {0.5f,0.5f};
     crosshair->t2d.position = { 0.5f,0.5f,0.0f,0.0f };
-    crosshair->t2d.size = {0.0f,0.0f,4.0f,4.0f};
-    crosshair->rounding = 0.1;
+    crosshair->t2d.size = {0.0f,0.0f,8.0f,8.0f};
+    crosshair->rounding = 1.0f;
     gui.push_back(crosshair);
 
     ImageBox* testgui = new ImageBox();
@@ -357,9 +386,13 @@ int main() {
     Texture* magic = new Texture("itsmagicbitch.jpg");
     testgui->tex = magic;
 
+    Texture* snowflake = new Texture("assets/snowflake.png");
+    pe->tex = snowflake;
+    snow->tex = snowflake;
+
     Model leiheng("leihengsword.obj");
     leiheng.t.TranslateTo({ 5.0f,4.0f,0.0f });
-    leiheng.t.ScaleBy({1.0f,1.0f,1.0f});
+    leiheng.t.ScaleTo({1.0f,1.0f,1.0f});
 
     Mesh* floor = CreateCubeMesh();
     floor->t.ScaleTo({ 10.0f,0.4f,10.0f });
@@ -370,14 +403,21 @@ int main() {
     floor->p.velocity = false;
     meshes.push_back(floor);
 
-    SkyboxShader.Activate();
-    SkyboxShader.SetInt("skybox",0);
+    Mesh* cube = CreateCubeMesh();
+    cube->t.ScaleTo({ 1.0f,1.0f,1.0f });
+    cube->t.TranslateTo({ 5.0f,4.0f,6.5f });
+    meshes.push_back(cube);
+
+    SkyboxShader->Activate();
+    SkyboxShader->SetInt("skybox",0);
 
     //LOOP
     while (!glfwWindowShouldClose(window))
     {
         ////////////////////////////////////START OF LOOP///////////////////////////////////
         frame++;
+
+        float deltatime = 1.0f / float(fps);
         
         //INPUTS
         ProcessInputs(window);
@@ -420,6 +460,8 @@ int main() {
 
         }
 
+        RayIntersectsModel({ camera.t.GetTranslation(), camera.t.GetFrontVector() * 100.0f }, leiheng);
+
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {
             /*
@@ -431,12 +473,21 @@ int main() {
             }
             */
         }
-        
+
+        snow->Emit();
+        snow->Emit();
+        snow->Emit();
+        snow->Emit();
+        snow->Emit();
+        snow->Emit();
+        snow->Emit();
+        snow->Emit();
+
         for (ParticleEmitter* pe : pes) {
-            pe->Step(1/60.0f);
+            pe->Step(deltatime);
         }
 
-        physicsengine.Step(1.0f / 60.0f);
+        physicsengine.Step(deltatime);
         /*
         if (frame % 2 == 0) {
             physicsengine.Step(1.0f / 30.0f);
@@ -458,9 +509,9 @@ int main() {
         ////////////////////////////////////SKYBOX////////////////////////////////////
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glDisable(GL_DEPTH_TEST);  // change depth function so depth test passes when values are equal to depth buffer's content
-        SkyboxShader.Activate();
-        SkyboxShader.SetMat4("proj", camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f));
-        SkyboxShader.SetMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
+        SkyboxShader->Activate();
+        SkyboxShader->SetMat4("proj", camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f));
+        SkyboxShader->SetMat4("view", glm::mat4(glm::mat3(camera.GetViewMatrix())));
         // skybox cube
         glBindVertexArray(skyboxVAO);
         glActiveTexture(GL_TEXTURE0);
@@ -475,13 +526,15 @@ int main() {
 
         ////////////////////////////////////RENDER STUFF////////////////////////////////////
 
-        ShaderProgram.Activate();
+        MeshShader->Activate();
 
-        camera.Matrix(90.0f, 0.05f, 2000.0f, ShaderProgram);
+        glm::mat4 proj = camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        camera.Matrix(90.0f, 0.05f, 2000.0f, *MeshShader);
 
         //LIGHTING STUFF
 
-        MainDirLight.Bind(ShaderProgram);
+        MainDirLight.Bind(*MeshShader);
 
         //SCENE
 
@@ -492,18 +545,21 @@ int main() {
         //testtex.Unbind();
 
         for (int i = 0; i < cubes.size(); i++) {
-            cubes[i]->Render(ShaderProgram);
+            cubes[i]->Render(*MeshShader);
         }
 
         for (Mesh* mesh : meshes) {
-            mesh->Render(ShaderProgram);
+            mesh->Render(*MeshShader);
         }
 
-        leiheng.Render(ShaderProgram);
+        leiheng.Render(*MeshShader);
         
         glDisable(GL_CULL_FACE);
+        ParticleShader->Activate();
+        ParticleShader->SetMat4("proj", proj);
+        ParticleShader->SetMat4("view", view);
         for (ParticleEmitter* pe : pes) {
-            pe->Render(ShaderProgram);
+            pe->Render(*ParticleShader,camera);
         }
         glEnable(GL_CULL_FACE);
         //unbind stuff
@@ -516,7 +572,7 @@ int main() {
         glClearColor(0.0f,0.0f,0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        ScreenShader.Activate();
+        ScreenShader->Activate();
         
         //ScreenShader.Set1F("saturation", sin((float)frame/15) * 1.0f + 1.0f);
         quadVAO.Bind();
@@ -530,14 +586,14 @@ int main() {
             if (box->Opacity == 0.0f) continue;
             
             if (ImageBox* boxe = dynamic_cast<ImageBox*>(box)) {
-                box->Render(ImageBoxShader, width, height);
+                box->Render(*ImageBoxShader, width, height);
             }
             else if (TextBox* boxe = dynamic_cast<TextBox*>(box)) {
-                boxe->Render(BoxShader, width, height);
-                boxe->RenderText(Text2DShader,width,height);
+                boxe->Render(*BoxShader, width, height);
+                boxe->RenderText(*Text2DShader,width,height);
             }
             else {
-                box->Render(BoxShader, width, height);
+                box->Render(*BoxShader, width, height);
             }
         }
 
@@ -548,9 +604,6 @@ int main() {
     }
 
 
-    //testtex.Delete();
-
-    ShaderProgram.Delete();
 
     glfwDestroyWindow(window);
     glfwTerminate();

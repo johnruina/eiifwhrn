@@ -120,32 +120,15 @@
     <ClInclude Include="Particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="top.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="back.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="bottom.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="front.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="left.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="right.jpg">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="testtexture.png">
-      <Filter>Assets</Filter>
-    </Image>
-    <Image Include="metaltex.png">
-      <Filter>Assets</Filter>
-    </Image>
+    <ClInclude Include="Folder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -165,6 +148,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\Particle.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\Particle.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\default.frag">
+      <Filter>Shaders</Filter>
+    </None>
     <None Include="shaders\2DText.vert">
       <Filter>Shaders</Filter>
     </None>
@@ -199,9 +191,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\DebugCube.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\default.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\skybox.frag">

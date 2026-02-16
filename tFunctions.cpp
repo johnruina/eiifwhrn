@@ -66,12 +66,42 @@ std::optional<glm::vec3> RayIntersectsTriangle(const Ray& ray,
 
 std::optional<glm::vec3> IsRayInT(const Ray& ray, t_package t) {
 	const BoundingBox aabb = t.GetRotationlessAABB();
-	const glm::vec3 ray_origin = glm::conjugate(t.GetRotationQuaternion()) * ray.origin;
-	const glm::vec3 ray_direction = glm::conjugate(t.GetRotationQuaternion()) * ray.direction;
+	glm::mat4 inverse = glm::inverse(t.GetMatrix());
+	glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
+	glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
 
+	glm::vec3 dirfrac = glm::vec3(1.0f) / ray_direction;
+		// lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+		// r.org is origin of ray
 
+	glm::vec3 lb = {-0.5f,-0.5f,-0.5f};
+	glm::vec3 rt = {0.5f,0.5f,0.5f };
 
-	return {};
+	float t1 = (lb.x - ray_origin.x) * dirfrac.x;
+	float t2 = (rt.x - ray_origin.x) * dirfrac.x;
+	float t3 = (lb.y - ray_origin.y) * dirfrac.y;
+	float t4 = (rt.y - ray_origin.y) * dirfrac.y;
+	float t5 = (lb.z - ray_origin.z) * dirfrac.z;
+	float t6 = (rt.z - ray_origin.z) * dirfrac.z;
+
+	float tmin = glm::max(glm::max(glm::min(t1, t2), glm::min(t3, t4)), glm::min(t5, t6));
+	float tmax = glm::min(glm::min(glm::max(t1, t2), glm::max(t3, t4)), glm::max(t5, t6));
+
+	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+
+	if (tmax < 0)
+	{
+		return {};
+	}
+
+	// if tmin > tmax, ray doesn't intersect AABB
+	if (tmin > tmax)
+	{
+		return {};
+	}
+
+	
+	return { glm::vec3(t.GetMatrix() * glm::vec4(ray_direction*tmin+ray_origin, 1.0f))};
 }
 
 bool BoundingBoxInBoundingBox(const BoundingBox bb1, const BoundingBox bb2) {
@@ -391,7 +421,6 @@ glm::quat RotationBetweenVectors(glm::vec3 start, glm::vec3 dest) {
 		rotationAxis.y * invs,
 		rotationAxis.z * invs
 	);
-
 }
 
 glm::quat LookAt(glm::vec3 direction) {

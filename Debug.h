@@ -124,7 +124,7 @@ void Output(int& to) {
     std::cout << to << '\n';
 }
 
-void Output(glm::vec3& tooutput) {
+void Output(glm::vec3 tooutput) {
 	std::cout << tooutput.x << ' ' << tooutput.y << ' ' << tooutput.z << '\n';
 }
 

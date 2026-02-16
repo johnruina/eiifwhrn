@@ -10,9 +10,12 @@
 #include "texture.h"
 #include "t2d.h"
 #include "font.h"
+#include "RenderSystem.h"
+#include "Object.h"
 
-class Box {
+class Box : public Renderable, public Object {
 public:
+
     VAO boxVAO;
     VBO boxVBO;
 
@@ -23,11 +26,14 @@ public:
 
     float z = 0.0f;
 
-    float rotation = 0.0f;
+    float rotation = 0.0f;  
 
     float rounding = 0.0f;
 
     Box() {
+        gui = true;
+        shadertype = ShaderType::BoxShader;
+
         boxVBO.BufferData(&quadVertices, sizeof(quadVertices));
 
         boxVAO.LinkVBO(boxVBO, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
@@ -154,6 +160,7 @@ public:
     }
 
     TextBox() {
+        shadertype = ShaderType::TextShader;
     }
 
 };
@@ -162,7 +169,7 @@ class ImageBox : public Box {
 public:
     Texture* tex;
     ImageBox() {
-
+        shadertype = ShaderType::ImageBoxShader;
     }
 
     void Render(Shader& ShaderProgram, int& screenWidth, int& screenHeight) override {

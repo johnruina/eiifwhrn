@@ -133,6 +133,10 @@ public:
 	void RotateByQuaternionCumulate(glm::quat q) noexcept {
 		orient = orient * q;
 	}
+
+	void RotateByEulerAnglesCumulate(glm::vec3 e) noexcept {
+		orient = orient * glm::quat(e);
+	}
 	void RotateToEulerAngles(glm::vec3 e) noexcept {
 		orient = glm::quat(e);
 	}
@@ -171,11 +175,26 @@ public:
 		target.pos = pos;
 	}
 
+	glm::mat4 GetScaleMatrix() const noexcept {
+		return glm::scale(glm::mat4(1.0f), scale);
+	}
+
+	glm::mat4 GetTranslationMatrix() const noexcept {
+		return glm::translate(glm::mat4(1.0f), pos);
+	}
+
+	glm::mat4 GetRotationMatrix() const noexcept {
+		return glm::mat4_cast(orient);
+	}
+
 	glm::mat4 GetMatrix() const noexcept {
+		return GetTranslationMatrix() * GetRotationMatrix() * GetScaleMatrix();
+	}
+
+	glm::mat4 GetMatrixRotationless() const noexcept {
 		glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), scale);
-		glm::mat4 rotMat = glm::mat4_cast(orient);
 		glm::mat4 translMat = glm::translate(glm::mat4(1.0f), pos);
-		return translMat * rotMat * scaleMat;
+		return translMat* scaleMat;
 	}
 
 	glm::quat GetRotationQuaternion() const noexcept {

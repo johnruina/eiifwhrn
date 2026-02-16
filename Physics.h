@@ -220,12 +220,12 @@ public:
 
 		if (a->velocity) {
 			a->linearvelocity +=inversemass1 * impulse * (collisionnormal+frictionfactor*frictionvector);
-			a->angularvelocity +=inverseinertiatensora * impulse * (glm::cross(relativecola, (collisionnormal + frictionfactor * frictionvector)));
+			a->angularvelocity +=inverseinertiatensora * impulse * (glm::cross(relativecola, (collisionnormal + frictionfactor * frictionvector)))/4.0f;
 		}
 
 		if (b->velocity) {
 			b->linearvelocity -= inversemass2 * impulse * (collisionnormal + frictionfactor * frictionvector);
-			b->angularvelocity -= inverseinertiatensorb * (glm::cross(relativecolb, impulse * (collisionnormal + frictionfactor * frictionvector)));
+			b->angularvelocity -= inverseinertiatensorb * (glm::cross(relativecolb, impulse * (collisionnormal + frictionfactor * frictionvector)))/4.0f;
 		}
 
 	}
