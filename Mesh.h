@@ -132,8 +132,8 @@ public:
 				std::vector<GLuint> posindices;
 				std::vector<GLuint> negindices;
 
-				std::vector<GLuint> posnewvertices;
-				std::vector<GLuint> negnewvertices;
+				std::map<float,int> posnewvertices;
+				std::map<float, int> negnewvertices;
 
 				for (int i = 0; i < indices.size()/3; i++) {
 					//I IS THE CURRENT TRIANGLE
@@ -201,8 +201,10 @@ public:
 						float v1factor = (rotatedvertices[niso1].y - relativeslicepos) / (rotatedvertices[niso1].y - rotatedvertices[iso].y);
 						float v2factor = (rotatedvertices[niso2].y - relativeslicepos) / (rotatedvertices[niso2].y - rotatedvertices[iso].y);
 
-						v1.Position = (slicequat * (glm::mix(rotatedvertices[niso1], rotatedvertices[iso],v1factor))) / t.GetScale();
-						v2.Position = (slicequat * (glm::mix(rotatedvertices[niso2], rotatedvertices[iso], v2factor))) / t.GetScale();
+						glm::vec3 v1pos = glm::mix(rotatedvertices[niso1], rotatedvertices[iso], v1factor);
+						glm::vec3 v2pos = glm::mix(rotatedvertices[niso2], rotatedvertices[iso], v2factor);
+						v1.Position = (slicequat * v1pos) / t.GetScale();
+						v2.Position = (slicequat * v2pos) / t.GetScale();
 						v1.Normal = glm::mix(vertices[niso1].Normal, vertices[iso].Normal, v1factor);
 						v2.Normal = glm::mix(vertices[niso2].Normal, vertices[iso].Normal, v2factor);
 						v1.TexCoords = glm::mix(vertices[niso1].TexCoords, vertices[iso].TexCoords, v1factor);
@@ -214,8 +216,8 @@ public:
 							posvertices.push_back(v2);
 							posvertices.push_back(vertices[iso]);
 
-							posnewvertices.push_back(posvertices.size() - 3);
-							posnewvertices.push_back(posvertices.size() - 2);
+							posnewvertices[v1pos.x] = posvertices.size() - 3;
+							posnewvertices[v2pos.x] = posvertices.size() - 2;
 
 							posindices.push_back(posvertices.size() - 3);
 							posindices.push_back(posvertices.size() - 2);
@@ -223,20 +225,19 @@ public:
 
 							negvertices.push_back(vertices[niso1]);
 							negvertices.push_back(vertices[niso2]);
-							negvertices.push_back(v2);
 							negvertices.push_back(v1);
-
-							negnewvertices.push_back(negvertices.size() - 2);
-							negnewvertices.push_back(negvertices.size() - 1);
+							negvertices.push_back(v2);
 
 							negindices.push_back(negvertices.size() - 4);
 							negindices.push_back(negvertices.size() - 3);
-							negindices.push_back(negvertices.size() - 2);
-
-							negindices.push_back(negvertices.size() - 2);
 							negindices.push_back(negvertices.size() - 1);
+
+							negindices.push_back(negvertices.size() - 1);
+							negindices.push_back(negvertices.size() - 2);
 							negindices.push_back(negvertices.size() - 4);
 
+							negnewvertices[v1pos.x] = negvertices.size() - 2;
+							negnewvertices[v2pos.x] = negvertices.size() - 1;
 						}
 						else {
 							//THE ISOLATED VERTEX IS IN THE NEG MESH
@@ -248,53 +249,78 @@ public:
 							negindices.push_back(negvertices.size() - 2);
 							negindices.push_back(negvertices.size() - 1);
 
-							negnewvertices.push_back(negnewvertices.size() - 3);
-							negnewvertices.push_back(negnewvertices.size() - 2);
+							negnewvertices[v1pos.x] = negvertices.size() - 3;
+							negnewvertices[v2pos.x] = negvertices.size() - 2;
 
 							posvertices.push_back(vertices[niso1]);
 							posvertices.push_back(vertices[niso2]);
-							posvertices.push_back(v2);
 							posvertices.push_back(v1);
+							posvertices.push_back(v2);
 
 							posindices.push_back(posvertices.size() - 4);
 							posindices.push_back(posvertices.size() - 3);
-							posindices.push_back(posvertices.size() - 2);
-
-							posindices.push_back(posvertices.size() - 2);
 							posindices.push_back(posvertices.size() - 1);
+
+							posindices.push_back(posvertices.size() - 1);
+							posindices.push_back(posvertices.size() - 2);
 							posindices.push_back(posvertices.size() - 4);
 
-							posnewvertices.push_back(posvertices.size() - 2);
-							posnewvertices.push_back(posvertices.size() - 1);
-
+							posnewvertices[v1pos.x] = posvertices.size() - 2;
+							posnewvertices[v2pos.x] = posvertices.size() - 1;
+						}
+					}
+				}
+				/*
+				int last2i = -1;
+				int last1i = -1;
+				bool flip = true;
+				for (auto it = negnewvertices.begin(); it != negnewvertices.end(); ++it)
+				{
+					if (last2i != -1 and last1i != -1) {
+						negvertices.push_back(negvertices[(*it).second]);
+						if (flip) {
+							negvertices.push_back(negvertices[last2i]);
+							negvertices.push_back(negvertices[last1i]);
+						}
+						else {
+							negvertices.push_back(negvertices[last1i]);
+							negvertices.push_back(negvertices[last2i]);
 						}
 
+						negindices.push_back(negvertices.size() - 3);
+						negindices.push_back(negvertices.size() - 2);
+						negindices.push_back(negvertices.size() - 1);
+					}
 
-					}
+					last2i = last1i;
+					last1i = (*it).second;
+					flip = not flip;
+						
 				}
-				/*
-				std::sort(posnewvertices.begin(), posnewvertices.end(), [posnewvertices,posvertices](int a, int b) {
-					return posvertices[posnewvertices[a]].Position.x > posvertices[posnewvertices[b]].Position.x;
-					});
-				std::sort(negnewvertices.begin(), negnewvertices.end(), [negnewvertices,negvertices](int a, int b) {
-					return negvertices[negnewvertices[a]].Position.x > negvertices[negnewvertices[b]].Position.x;
-					});
-					*/
-				/*
-				for (int i = 0; i < negnewvertices.size(); i++) {
-					if (i >= 2) {
-						negindices.push_back(negnewvertices[i - 2]);
-						negindices.push_back(negnewvertices[i - 1]);
-						negindices.push_back(negnewvertices[i - 0]);
-					}
-				}
+				last2i = -1;
+				last1i = -1;
+				flip = true;
+				for (auto it = posnewvertices.begin(); it != posnewvertices.end(); ++it)
+				{
+					if (last2i != -1 and last1i != -1) {
+						posvertices.push_back(posvertices[(*it).second]);
+						if (flip) {
+							posvertices.push_back(posvertices[last2i]);
+							posvertices.push_back(posvertices[last1i]);
+						}
+						else {
+							posvertices.push_back(posvertices[last1i]);
+							posvertices.push_back(posvertices[last2i]);
+						}
 
-				for (int i = 0; i < posnewvertices.size(); i++) {
-					if (i >= 2) {
-						posindices.push_back(posnewvertices[i-2]);
-						posindices.push_back(posnewvertices[i - 1]);
-						posindices.push_back(posnewvertices[i - 0]);
+						posindices.push_back(posvertices.size() - 3);
+						posindices.push_back(posvertices.size() - 2);
+						posindices.push_back(posvertices.size() - 1);
 					}
+
+					last2i = last1i;
+					last1i = (*it).second;
+					flip = not flip;
 				}
 				*/
 				if (posindices.size() > 0) {
