@@ -2,6 +2,7 @@
 #ifndef OBJECTS_CLASS
 #define OBJECTS_CLASS
 
+#include <iostream>
 #include <vector>
 #include <string>
 
@@ -18,6 +19,12 @@ public:
 
 	Object() {
 
+	}
+
+	~Object() {
+		for (auto child : children) {
+			child->Delete();
+		}
 	}
 	
 	Object(Object* parent) : parent(parent) {
@@ -41,35 +48,49 @@ public:
 	}
 
 	void RemoveChild(Object* obj) {
-
-		obj->parent = nullptr;
-		children.erase(GetChildIterator(obj));
-	}
-
-	std::vector<Object*>::iterator GetChildIterator(Object* obj) {
 		auto it = std::find(children.begin(), children.end(), obj);
-		if (it == children.end()) return children.end();
-		return it;
+		if (it != children.end()) {
+			children.erase(it);
+			obj->parent = nullptr;
+		}
 	}
 
-	Object* GetChild(std::string name) {
-
+	void DeleteChild(Object* obj) {
+		auto it = std::find(children.begin(),children.end(),obj);
+		if (it != children.end()) {
+			children.erase(it);
+			obj->parent = nullptr;
+			obj->Delete();
+		}		
 	}
 
 	void SetParent(Object* nparent) {
 		nparent->AddChild(this);
 	}
 
+	Object* GetParent() {
+		return parent;
+	}
+
 	int GetChildrenAmount() {
 		return children.size();
 	}
 
-	void Destroy() {
+	void ClearChildren() {
+		children = {};
+	}
+
+	virtual void Delete() {
 		for (auto child : children) {
-			child->Destroy();
+			child->Delete();
 		}
-		parent->RemoveChild(this);
+		RemoveFromParent();
+		
 		delete this;
+	}
+
+	virtual Object* Clone() {
+		return new Object(*this);
 	}
 	
 private:

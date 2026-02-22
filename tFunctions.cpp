@@ -4,19 +4,19 @@ glm::vec3 CalculateTriangleNormal(Triangle t) {
 	return glm::normalize(glm::cross(t.b - t.a, t.c - t.a));
 }
 
-float Magnitude(const glm::vec3& v) {
-	return pow(pow(v.x,2.0f) + pow(v.y, 2.0f) + pow(v.z, 2.0f), 0.5f);
+float Magnitude2(const glm::vec3& v) {
+	return v.x*v.x + v.y*v.y + v.z*v.z;
 }
 
-float SquaredMagnitude(const glm::vec3& v) {
-	return pow(v.x, 2.0f) + pow(v.y, 2.0f) + pow(v.z, 2.0f);
+float Magnitude(const glm::vec3& v) {
+	return pow(Magnitude2(v), 0.5f);
 }
 
 //SQUARED FOR PERFORMANCE REASONS
 float SquaredPerpendicularMagnitude(glm::vec3 off, glm::vec3 line)
 {
-	float offmag = SquaredMagnitude(off);
-	return offmag * (glm::dot(off, line)/ (offmag + SquaredMagnitude(line)));
+	float offmag = Magnitude2(off);
+	return offmag * (glm::dot(off, line)/ (offmag + Magnitude2(line)));
 }
 
 float VolumeOfTriangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
@@ -203,7 +203,7 @@ std::optional<AxisCollisionCN> TAxisCollidesTCN(std::vector < glm::vec3 >& t1, s
 bool TNearT(t_package& t1, t_package& t2)
 {
 	glm::vec3 posdif = t1.GetTranslation() - t2.GetTranslation();
-	return t1.SquaredMagnitude() + t2.SquaredMagnitude() > (posdif.x* posdif.x+ posdif.y* posdif.y+ posdif.z* posdif.z) * 2.0f;
+	return t1.ScaleMagnitude2() + t2.ScaleMagnitude2() > (posdif.x* posdif.x+ posdif.y* posdif.y+ posdif.z* posdif.z) * 2.0f;
 }
 
 bool TInTNoInfo(t_package& t1, t_package& t2) {

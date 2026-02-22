@@ -10,6 +10,9 @@ class VBO {
 public:
 	GLuint ID;
 	VBO();
+	void GenerateID() {
+		glGenBuffers(1, &ID);
+	};
 	void BufferData(void* vertices, GLsizeiptr size);
 	void Bind();
 	void Unbind();

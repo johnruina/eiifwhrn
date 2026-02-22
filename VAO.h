@@ -9,6 +9,9 @@ class VAO {
 public:
 	GLuint ID;
 	VAO();
+	void GenerateID() {
+		glGenVertexArrays(1, &ID);
+	}
 	void LinkVBO(VBO& vbo, GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset);
 	void Bind();
 	void Unbind();

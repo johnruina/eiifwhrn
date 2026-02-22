@@ -277,11 +277,13 @@ int main() {
 
     VAO quadVAO;
     VBO quadVBO;
+    quadVAO.GenerateID();
+    quadVBO.GenerateID();
+    quadVAO.Bind();
     quadVBO.BufferData(&quadVertices, sizeof(quadVertices));
 
     quadVAO.LinkVBO(quadVBO,0,2,GL_FLOAT, 4 * sizeof(float), (void*)0);
     quadVAO.LinkVBO(quadVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
 
     //LIGHTING
 
@@ -325,13 +327,12 @@ int main() {
     //FONTS
     std::vector<Font> fonts;
 
-    std::string arialdirectory = "C:/Windows/Fonts/arial.ttf";
+    std::string arialdirectory = "assets/ft/arial.ttf";
     Font* arial = new Font(arialdirectory.c_str());
 
     //FOLDERS
     Folder mainf;
-    std::vector<Model*> cubes = {};
-    std::vector<Mesh*> meshes = {};
+    Folder meshes = {};
     std::vector<Box*> gui = {};
     std::vector<ParticleEmitter*> pes;
     //EVENTUALLY CONVERGE INTO ONE FOLDER
@@ -391,22 +392,29 @@ int main() {
     snow->tex = snowflake;
 
     Model leiheng("leihengsword.obj");
-    leiheng.t.TranslateTo({ 5.0f,4.0f,0.0f });
+    leiheng.t.TranslateTo({ 5.0f,10.0f,0.0f });
     leiheng.t.ScaleTo({1.0f,1.0f,1.0f});
+    for (Mesh* mesh : leiheng.meshes) {
+        auto newmesh = mesh->Clone();
+        newmesh->t.TranslateBy({0.0f,10.0f,0.0f});
+        meshes.AddChild(newmesh);
+    }
+    leiheng.t.TranslateTo({ 10.0f,4.0f,0.0f });
 
     Mesh* floor = CreateCubeMesh();
     floor->t.ScaleTo({ 10.0f,0.4f,10.0f });
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
-    floor->InitializePhysics();
-    floor->AddPhysicsToEngine(physicsengine);
-    floor->p.mass = 5000.0f;
-    floor->p.velocity = false;
-    meshes.push_back(floor);
+    meshes.AddChild(floor);
 
     Mesh* cube = CreateCubeMesh();
     cube->t.ScaleTo({ 1.0f,1.0f,1.0f });
     cube->t.TranslateTo({ 5.0f,4.0f,6.5f });
-    meshes.push_back(cube);
+    meshes.AddChild(cube);
+
+    Mesh* bigasswall = CreateCubeMesh();
+    bigasswall->t.ScaleTo({ 1.0f,200.0f,200.0f });
+    bigasswall->t.TranslateTo({ 20.0f,4.0f,6.5f });
+    meshes.AddChild(bigasswall);
 
     SkyboxShader->Activate();
     SkyboxShader->SetInt("skybox",0);
@@ -428,8 +436,8 @@ int main() {
             if (buffer.GetType() == Mouse::Event::Type::RPress) {
                 camera.lockedcursor = not camera.lockedcursor;
             } else if (buffer.GetType() == Mouse::Event::Type::LPress) {
-                for (Box* box : gui) {
 
+                for (Box* box : gui) {
                     if (BoxButton* boxe = dynamic_cast<BoxButton*>(box)) {
                         //bitch ass goofy ass y is flipped bleh
                         boxe->UpdateClicked(mouse.GetX(), height - mouse.GetY());
@@ -439,28 +447,33 @@ int main() {
             }
         }
 
+        if (mouse.IsLeftDown()) {
+            for (auto e : meshes.GetChildren()) {
+                if (Mesh* mesh = static_cast<Mesh*>(e))
+                    RayIntersectsMesh({ camera.t.GetTranslation(), camera.t.GetFrontVector() * 100.0f }, mesh);
+            }
+        }
+
         while (Keyboard::Event buffer = keyboard.ReadKey()) {
             if (buffer.GetCode() == 'F' and buffer.IsPress()) {
                 Model* newcube = new Model("cratelookingthing.obj");
                 newcube->t.TranslateTo(camera.t.GetTranslation());
-                newcube->AddPhysicsToEngine(physicsengine);
-                cubes.push_back(newcube);
+            } else  if (buffer.GetCode() == 'Z' and buffer.IsPress()) {
+                for (auto e : meshes.GetChildren()) {
+                    if (Mesh* mesh = static_cast<Mesh*>(e))
+                    mesh->Slice(camera.t.GetTranslation(), LookAt(camera.t.GetFrontVector()));
+                }
+                std::cout << '\n';
             }
         }
-        if (keyboard.IsKeyDown('Z')) {
-            int initialsize = meshes.size();
-            for (int i = 0; i < initialsize; i++) {
-                meshes[i]->Slice(camera.t.GetTranslation(), camera.t.GetRotationQuaternion(), meshes);
-            }
-        }
+
         if (keyboard.IsKeyDown('R')) {
             pe->t.TranslateTo(camera.t.GetTranslation());
             pe->t.RotateToQuaternion(camera.t.GetRotationQuaternion());
             pe->Emit();
-
         }
 
-        RayIntersectsModel({ camera.t.GetTranslation(), camera.t.GetFrontVector() * 100.0f }, leiheng);
+        //RayIntersectsModel({ camera.t.GetTranslation(), camera.t.GetFrontVector() * 100.0f }, leiheng);
 
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {
@@ -538,21 +551,14 @@ int main() {
 
         //SCENE
 
+        //leiheng.RenderWireframe(*MeshShader);
         
-        //mat
+        for (Object* mesh : meshes.GetChildren()) {
 
+            if (Mesh* boxe = static_cast<Mesh*>(mesh))
 
-        //testtex.Unbind();
-
-        for (int i = 0; i < cubes.size(); i++) {
-            cubes[i]->Render(*MeshShader);
+            boxe->Render(*MeshShader);
         }
-
-        for (Mesh* mesh : meshes) {
-            mesh->Render(*MeshShader);
-        }
-
-        leiheng.Render(*MeshShader);
         
         glDisable(GL_CULL_FACE);
         ParticleShader->Activate();

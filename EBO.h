@@ -8,6 +8,9 @@ class EBO {
 public:
 	GLuint ID;
 	EBO();
+	void GenerateID() {
+		glGenBuffers(1, &ID);
+	};
 	void BufferData(GLuint* indices, GLsizeiptr size);
 	void Bind();
 	void Unbind();

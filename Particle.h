@@ -72,11 +72,11 @@ public:
 	Mesh mesh;
 	
 	ParticleEmitter() {
-		mesh.InitializeMesh(quadVertices3D, quadIndices3D);
+		mesh = Mesh(quadVertices3D, quadIndices3D);
 	}
 
 	ParticleEmitter(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
-		mesh.InitializeMesh(meshvertices, meshindices);
+		mesh = Mesh(meshvertices, meshindices);
 	}
 
 	void Emit() {

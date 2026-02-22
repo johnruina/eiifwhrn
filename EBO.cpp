@@ -3,7 +3,6 @@
 
 EBO::EBO()
 {
-	glGenBuffers(1, &ID);
 }
 
 void EBO::BufferData(GLuint* indices, GLsizeiptr size) {
@@ -25,4 +24,5 @@ void EBO::Unbind()
 void EBO::Delete()
 {
 	glDeleteBuffers(1, &ID);
+	ID = 0;
 }

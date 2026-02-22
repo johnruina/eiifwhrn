@@ -4,6 +4,8 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <map>
+#include <algorithm>
 
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
@@ -27,8 +29,6 @@ class Mesh : public Object , public Renderable {
 protected:
 public:
 	t_package t;
-	p_package p;
-	Physics* bindedphysicsengine;
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
 	std::vector<Texture> textures;
@@ -42,10 +42,7 @@ public:
 
 	};
 
-	Mesh(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices/*, std::vector<Texture> textures*/) :
-		vertices(meshvertices),
-		indices(meshindices)
-		//textures(textures)
+	Mesh(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices/*, std::vector<Texture> textures*/)
 	{
 		InitializeMesh(meshvertices,meshindices);
 	};
@@ -53,48 +50,39 @@ public:
 	void InitializeMesh(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
 		vertices = meshvertices;
 		indices = meshindices;
-		vbo.BufferData(&vertices[0], vertices.size() * sizeof(Vertex));
-		ebo.BufferData(&indices[0], indices.size() * sizeof(GLuint));
 
-		vbo.Bind();
-		ebo.Bind();
-
-		vao.LinkVBO(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
-		vao.LinkVBO(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-		vao.LinkVBO(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-
-		vao.Unbind();
-		vbo.Unbind();
-		ebo.Unbind();
-
+		GenerateRenderData();
 		NormalizeVertices();
 		UpdateVertices();
 	}
 
-	Mesh(const Mesh& other) {
+	void GenerateRenderData() {
 
-		this->vertices = other.vertices;
-		this->indices = other.indices;
-		this->textures = other.textures;
-		this->t = other.t;
+		vbo.GenerateID();
+		vao.GenerateID();
+		ebo.GenerateID();
 
-		this->vbo = VBO();
-		this->vao = VAO();
-		this->ebo = EBO();
+		if (vertices.size() <= 0 or indices.size() <= 0) {
+			std::cout << "NO VERTICES OR INDICES DURING RENDER DATA INTIALIZATION\n";
 
-		this->vbo.BufferData(&vertices[0], vertices.size() * sizeof(Vertex));
-		this->ebo.BufferData(&indices[0], indices.size() * sizeof(GLuint));
+		}
+		else {
 
-		this->vbo.Bind();
-		this->ebo.Bind();
+			vao.Bind();
+			vbo.BufferData(&vertices[0], vertices.size() * sizeof(Vertex));
+			ebo.BufferData(&indices[0], indices.size() * sizeof(GLuint));
 
-		this->vao.LinkVBO(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
-		this->vao.LinkVBO(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-		this->vao.LinkVBO(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+			vbo.Bind();
+			ebo.Bind();
 
-		this->vao.Unbind();
-		this->vbo.Unbind();
-		this->ebo.Unbind();
+			vao.LinkVBO(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
+			vao.LinkVBO(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+			vao.LinkVBO(vbo, 2, 2, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+			vao.Unbind();
+			vbo.Unbind();
+			ebo.Unbind();
+		}
 	}
 
 	virtual ~Mesh() {
@@ -102,22 +90,6 @@ public:
 		vbo.Delete();
 		ebo.Delete();
 		//delete this;
-	}
-
-	void InitializePhysics() {
-		p.t = &t;
-	}
-
-	void AddPhysicsToEngine(Physics& engine) {
-		engine.AddObject(&p);
-		bindedphysicsengine = &engine;
-	}
-
-	void RemovePhysicsFromEngine() {
-		if (bindedphysicsengine != nullptr) {
-			bindedphysicsengine->RemoveObject(&p);
-			bindedphysicsengine = nullptr;
-		}
 	}
 
 	float GetVolume() const {
@@ -130,61 +102,232 @@ public:
 		return runningtotal * t.GetScale().x * t.GetScale().y * t.GetScale().z;
 	}
 
-	void Slice(glm::vec3 origin, glm::quat slicequat, std::vector<Mesh*>& meshvectorforthestufftogoin) {
+	void Slice(glm::vec3 origin, glm::quat slicequat) {
 		
-		glm::vec3 pos = t.GetTranslation() + (glm::conjugate(slicequat) * (origin - t.GetTranslation()));;
+		glm::vec3 pos = glm::conjugate(slicequat) * (t.GetTranslation() - origin);
+		float relativeslicepos = -pos.y;
+		std::vector<glm::vec3> rotatedvertices;
+		std::vector<bool> vstates;
 
-		std::vector<glm::vec3> newvs = {};
+		if (pos.y * pos.y <= t.ScaleMagnitude2()) {
+			bool posfound = false;
+			bool negfound = false;
+			for (int i = 0; i < vertices.size(); i++) {
+				glm::vec3 vpos = glm::conjugate(slicequat) * (vertices[i].Position * t.GetScale());
+				rotatedvertices.push_back(vpos);
 
-		bool posfound = false;
-		bool negfound = false;
-		for (int i = 0; i < vertices.size(); i++) {
-			glm::vec3 newpos = glm::conjugate(slicequat) * vertices[i].Position;
-			newvs.push_back(newpos);
-			if (newpos.y + pos.y > 0) {
-				posfound = true;
-			}
-			else {
-				negfound = true;
-			}
-		}
-
-		if (posfound and negfound) {
-
-			
-			Mesh* posmesh = new Mesh(*this);
-			Mesh* negmesh = new Mesh(*this);
-			posmesh->indices = std::vector<GLuint>();
-			negmesh->indices = std::vector<GLuint>();
-
-			for (int i = 0; i < indices.size() / 3; i++) {
-				if (newvs[indices[i * 3]].y > 0 and newvs[indices[i * 3 + 1]].y > 0 and newvs[indices[i * 3 + 2]].y > 0) {
-					posmesh->indices.push_back(indices[i * 3]);
-					posmesh->indices.push_back(indices[i * 3 + 1]);
-					posmesh->indices.push_back(indices[i * 3 + 2]);
-				}
-				else if (newvs[indices[i * 3]].y <= 0 and newvs[indices[i * 3 + 1]].y <= 0 and newvs[indices[i * 3 + 2]].y <= 0) {
-					negmesh->indices.push_back(indices[i * 3]);
-					negmesh->indices.push_back(indices[i * 3 + 1]);
-					negmesh->indices.push_back(indices[i * 3 + 2]);
+				if (vpos.y> relativeslicepos) {
+					posfound = true;
+					vstates.push_back(true);
 				}
 				else {
-					//wallahi...
-
+					negfound = true;
+					vstates.push_back(false);
 				}
-
 			}
 
-			posmesh->NormalizeVertices();
-			negmesh->NormalizeVertices();
-			meshvectorforthestufftogoin.reserve(meshvectorforthestufftogoin.size() + 2);
-			meshvectorforthestufftogoin.push_back(posmesh);
+			if (posfound and negfound) {
+				std::vector<Vertex> posvertices;
+				std::vector<Vertex> negvertices;
+				std::vector<GLuint> posindices;
+				std::vector<GLuint> negindices;
 
-			meshvectorforthestufftogoin.push_back(negmesh);
-			
+				std::vector<GLuint> posnewvertices;
+				std::vector<GLuint> negnewvertices;
+
+				for (int i = 0; i < indices.size()/3; i++) {
+					//I IS THE CURRENT TRIANGLE
+
+					//CONVERT TO VERTICES BY MULTI 3 + whatever
+
+					int ind1 = indices[i * 3 + 0];
+					int ind2 = indices[i * 3 + 1];
+					int ind3 = indices[i * 3 + 2];
+
+					bool vstate1 = vstates[ind1];
+					bool vstate2 = vstates[ind2];
+					bool vstate3 = vstates[ind3];
+
+					if (vstate1 and vstate2 and vstate3) {
+
+						posvertices.push_back(vertices[ind1]);
+						posvertices.push_back(vertices[ind2]);
+						posvertices.push_back(vertices[ind3]);
+
+						posindices.push_back(posvertices.size() -3);
+						posindices.push_back(posvertices.size() - 2);
+						posindices.push_back(posvertices.size() - 1);
+					}
+					else if (not vstate1 and not vstate2 and not vstate3) {
+						negvertices.push_back(vertices[ind1]);
+						negvertices.push_back(vertices[ind2]);
+						negvertices.push_back(vertices[ind3]);
+
+						negindices.push_back(negvertices.size() - 3);
+						negindices.push_back(negvertices.size() - 2);
+						negindices.push_back(negvertices.size() - 1);
+					}
+					else {
+						/**/
+						int niso1;
+						int niso2;
+						int iso;
+						Vertex v1;
+						Vertex v2;
+
+						bool isopos = false;
+						if (vstate1 != vstate2 and vstate1 != vstate3) {
+							//STATE1 IS THE ISO
+							niso1 = ind2;
+							niso2 = ind3;
+							iso = ind1;
+							isopos = vstate1;
+						}
+						else if (vstate2 != vstate1 and vstate2 != vstate3) {
+							//STATE 2 IS THE ISO
+							niso1 = ind3;
+							niso2 = ind1;
+							iso = ind2;
+							isopos = vstate2;
+						}
+						else {
+							//STATE 3 IS THE ISO
+							niso1 = ind1;
+							niso2 = ind2;
+							iso = ind3;
+							isopos = vstate3;
+						}
+
+						float v1factor = (rotatedvertices[niso1].y - relativeslicepos) / (rotatedvertices[niso1].y - rotatedvertices[iso].y);
+						float v2factor = (rotatedvertices[niso2].y - relativeslicepos) / (rotatedvertices[niso2].y - rotatedvertices[iso].y);
+
+						v1.Position = (slicequat * (glm::mix(rotatedvertices[niso1], rotatedvertices[iso],v1factor))) / t.GetScale();
+						v2.Position = (slicequat * (glm::mix(rotatedvertices[niso2], rotatedvertices[iso], v2factor))) / t.GetScale();
+						v1.Normal = glm::mix(vertices[niso1].Normal, vertices[iso].Normal, v1factor);
+						v2.Normal = glm::mix(vertices[niso2].Normal, vertices[iso].Normal, v2factor);
+						v1.TexCoords = glm::mix(vertices[niso1].TexCoords, vertices[iso].TexCoords, v1factor);
+						v2.TexCoords = glm::mix(vertices[niso2].TexCoords, vertices[iso].TexCoords, v2factor);
+						
+						if (isopos) {
+							//THE ISOLATED VERTEX IS IN THE POS MESH
+							posvertices.push_back(v1);
+							posvertices.push_back(v2);
+							posvertices.push_back(vertices[iso]);
+
+							posnewvertices.push_back(posvertices.size() - 3);
+							posnewvertices.push_back(posvertices.size() - 2);
+
+							posindices.push_back(posvertices.size() - 3);
+							posindices.push_back(posvertices.size() - 2);
+							posindices.push_back(posvertices.size() - 1);
+
+							negvertices.push_back(vertices[niso1]);
+							negvertices.push_back(vertices[niso2]);
+							negvertices.push_back(v2);
+							negvertices.push_back(v1);
+
+							negnewvertices.push_back(negvertices.size() - 2);
+							negnewvertices.push_back(negvertices.size() - 1);
+
+							negindices.push_back(negvertices.size() - 4);
+							negindices.push_back(negvertices.size() - 3);
+							negindices.push_back(negvertices.size() - 2);
+
+							negindices.push_back(negvertices.size() - 2);
+							negindices.push_back(negvertices.size() - 1);
+							negindices.push_back(negvertices.size() - 4);
+
+						}
+						else {
+							//THE ISOLATED VERTEX IS IN THE NEG MESH
+							negvertices.push_back(v1);
+							negvertices.push_back(v2);
+							negvertices.push_back(vertices[iso]);
+
+							negindices.push_back(negvertices.size() - 3);
+							negindices.push_back(negvertices.size() - 2);
+							negindices.push_back(negvertices.size() - 1);
+
+							negnewvertices.push_back(negnewvertices.size() - 3);
+							negnewvertices.push_back(negnewvertices.size() - 2);
+
+							posvertices.push_back(vertices[niso1]);
+							posvertices.push_back(vertices[niso2]);
+							posvertices.push_back(v2);
+							posvertices.push_back(v1);
+
+							posindices.push_back(posvertices.size() - 4);
+							posindices.push_back(posvertices.size() - 3);
+							posindices.push_back(posvertices.size() - 2);
+
+							posindices.push_back(posvertices.size() - 2);
+							posindices.push_back(posvertices.size() - 1);
+							posindices.push_back(posvertices.size() - 4);
+
+							posnewvertices.push_back(posvertices.size() - 2);
+							posnewvertices.push_back(posvertices.size() - 1);
+
+						}
+
+
+					}
+				}
+				/*
+				std::sort(posnewvertices.begin(), posnewvertices.end(), [posnewvertices,posvertices](int a, int b) {
+					return posvertices[posnewvertices[a]].Position.x > posvertices[posnewvertices[b]].Position.x;
+					});
+				std::sort(negnewvertices.begin(), negnewvertices.end(), [negnewvertices,negvertices](int a, int b) {
+					return negvertices[negnewvertices[a]].Position.x > negvertices[negnewvertices[b]].Position.x;
+					});
+					*/
+				/*
+				for (int i = 0; i < negnewvertices.size(); i++) {
+					if (i >= 2) {
+						negindices.push_back(negnewvertices[i - 2]);
+						negindices.push_back(negnewvertices[i - 1]);
+						negindices.push_back(negnewvertices[i - 0]);
+					}
+				}
+
+				for (int i = 0; i < posnewvertices.size(); i++) {
+					if (i >= 2) {
+						posindices.push_back(posnewvertices[i-2]);
+						posindices.push_back(posnewvertices[i - 1]);
+						posindices.push_back(posnewvertices[i - 0]);
+					}
+				}
+				*/
+				if (posindices.size() > 0) {
+					Mesh* posmesh = Clone();
+					posmesh->vertices = posvertices;
+					posmesh->indices = posindices;
+					posmesh->UpdateVertices();
+					posmesh->UpdateIndices();
+					posmesh->t.TranslateBy(slicequat* glm::vec3(0.0f,0.1f,0.0f));
+					//posmesh->NormalizeVertices();
+					GetParent()->AddChild(posmesh);
+				}
+				if (negindices.size() > 0) {
+					Mesh* negmesh = Clone();
+					negmesh->indices = negindices;
+					negmesh->vertices = negvertices;
+					negmesh->UpdateVertices();
+					negmesh->UpdateIndices();
+					negmesh->t.TranslateBy(slicequat* glm::vec3(0.0f, -0.1f, 0.0f));
+					//negmesh->NormalizeVertices();
+					GetParent()->AddChild(negmesh);
+				}
+				
+				Delete();
+			}
 		}
-		
 	}
+
+	virtual Mesh* Clone() override {
+		Mesh* tr = new Mesh(*this);
+		tr->GenerateRenderData();
+		return tr;
+	};
 
 	void Clear() {
 		vertices = std::vector<Vertex>();
@@ -200,17 +343,24 @@ public:
 	}
 
 	void UpdateVertices() {
-		glBufferSubData(GL_ARRAY_BUFFER, NULL, sizeof(vertices), &vertices[0]);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo.ID);
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		if (vertices.size() > 0) {
+
+			glBufferSubData(GL_ARRAY_BUFFER, NULL, sizeof(vertices), &vertices[0]);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo.ID);
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+		else std::cout << "NO VERTICES IN THIS MESH!!!!\n";
 	}
 
 	void UpdateIndices() {
+		if (indices.size() > 0) {
 		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, NULL, sizeof(indices), &indices[0]);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.ID);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+		else std::cout << "NO INDICES IN THIS MESH!!!!\n";
 	}
 
 	void NormalizeVertices() {
@@ -252,33 +402,6 @@ public:
 	virtual void Render(Shader& ShaderProgram, glm::mat4 modlmatrix) {
 		glm::mat4 topass = modlmatrix * t.GetMatrix();
 
-		unsigned int diffuseNr = 1;
-		unsigned int specularNr = 1;
-		unsigned int normalNr = 1;
-		unsigned int heightNr = 1;
-		/*=
-		for (unsigned int i = 0; i < textures.size(); i++)
-		{
-			glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-			// retrieve texture number (the N in diffuse_textureN)
-			std::string number;
-			std::string name = textures[i].type;
-
-			if (name == "texture_diffuse")
-				number = std::to_string(diffuseNr++);
-			else if (name == "texture_specular")
-				number = std::to_string(specularNr++); // transfer unsigned int to string
-			else if (name == "texture_normal")
-				number = std::to_string(normalNr++); // transfer unsigned int to string
-			else if (name == "texture_height")
-				number = std::to_string(heightNr++); // transfer unsigned int to string
-
-			// now set the sampler to the correct texture unit
-			glUniform1i(glGetUniformLocation(ShaderProgram.ID, (name + number).c_str()), i);
-			// and finally bind the texture
-			textures[i].Bind();
-		}
-		*/
 		ShaderProgram.Activate();
 		ShaderProgram.SetMat4("modl", topass);
 		vao.Bind();
@@ -288,33 +411,7 @@ public:
 
 	void Render(Shader& ShaderProgram) override {
 		glm::mat4 topass = t.GetMatrix();
-		/*
-		unsigned int diffuseNr = 1;
-		unsigned int specularNr = 1;
-		unsigned int normalNr = 1;
-		unsigned int heightNr = 1;
-		for (unsigned int i = 0; i < textures.size(); i++)
-		{
-			glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-			// retrieve texture number (the N in diffuse_textureN)
-			std::string number;
-			std::string name = textures[i].type;
 
-			if (name == "texture_diffuse")
-				number = std::to_string(diffuseNr++);
-			else if (name == "texture_specular")
-				number = std::to_string(specularNr++); // transfer unsigned int to string
-			else if (name == "texture_normal")
-				number = std::to_string(normalNr++); // transfer unsigned int to string
-			else if (name == "texture_height")
-				number = std::to_string(heightNr++); // transfer unsigned int to string
-
-			// now set the sampler to the correct texture unit
-			glUniform1i(glGetUniformLocation(ShaderProgram.ID, (name + number).c_str()), i);
-			// and finally bind the texture
-			textures[i].Bind();
-		}
-		*/
 		ShaderProgram.Activate();
 		ShaderProgram.SetMat4("modl",  topass);
 		vao.Bind();
@@ -323,43 +420,110 @@ public:
 	};
 
 	virtual void RenderWireframe(Shader& ShaderProgram) {
-		glm::mat4 topass = t.GetMatrix();
+		glDisable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		Render(ShaderProgram);
+		glEnable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-		ShaderProgram.Activate();
-		ShaderProgram.SetMat4("modl", topass);
-		vao.Bind();
-		glDrawElements(GL_LINES, indices.size(), GL_UNSIGNED_INT, 0);
-		vao.Unbind();
 	};
 
+	void DeleteRenderData() {
+		vbo.Delete();
+		ebo.Delete();
+		vao.Delete();
+	}
 
+	virtual void Delete() override {
+		DeleteRenderData();
+		Object::Delete();
+	}
+
+public:
 
 private:
 
 };
 
-std::optional<std::vector<glm::vec3>> RayIntersectsMesh(const Ray& ray, Mesh& mesh)
+void DivideFace(Mesh* mesh, int face, glm::vec3 centerlocalspace) {
+
+	int v1 = mesh->indices[face * 3];
+	int v2 = mesh->indices[face * 3 + 1];
+	int v3 = mesh->indices[face * 3 + 2];
+
+	Vertex newvertex;
+	newvertex.Position = centerlocalspace;
+	newvertex.TexCoords = { 0.0f,0.0f };
+	newvertex.Normal = CalculateTriangleNormal({ mesh->vertices[v1].Position ,mesh->vertices[v2].Position ,mesh->vertices[v3].Position });
+	mesh->vertices.push_back(newvertex);
+	int nvp = mesh->vertices.size() - 1;
+
+	mesh->indices.erase(mesh->indices.begin() + face * 3, mesh->indices.begin() + face * 3+3);
+
+	
+
+	mesh->indices.push_back(v1);
+	mesh->indices.push_back(v2);
+	mesh->indices.push_back(nvp);
+
+	mesh->indices.push_back(v2);
+	mesh->indices.push_back(v3);
+	mesh->indices.push_back(nvp);
+
+	mesh->indices.push_back(v3);
+	mesh->indices.push_back(v1);
+	mesh->indices.push_back(nvp);
+	
+	mesh->UpdateIndices();
+	mesh->UpdateVertices();
+}
+
+bool RayIntersectsMeshNoInfo(const Ray& ray, const Mesh* mesh)
+{
+	glm::mat4 inverse = glm::inverse(mesh->t.GetMatrix());
+	glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
+	glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
+
+	for (int i = 0; i < mesh->indices.size() / 3; i++) {
+		std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[i * 3]].Position, mesh->vertices[mesh->indices[i * 3 + 1]].Position,mesh->vertices[mesh->indices[i * 3 + 2]].Position });
+		if (intersection.has_value()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+struct IntersectionData {
+	glm::vec3 intersection;
+	int face;
+};
+
+std::optional<std::vector<glm::vec3>> RayIntersectsMesh(const Ray& ray, Mesh* mesh)
 {
 	//USE THIS AFTER A CHEAPER CHECK
 	std::vector<glm::vec3> intersections = {};
 
-	glm::mat4 inverse = glm::inverse(mesh.t.GetMatrix());
+	glm::mat4 inverse = glm::inverse(mesh->t.GetMatrix());
 	glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
 	glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
 
-	for (int i = 0; i < mesh.indices.size() / 3; i++) {
-		std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh.vertices[mesh.indices[i * 3]].Position, mesh.vertices[mesh.indices[i * 3 + 1]].Position,mesh.vertices[mesh.indices[i * 3 + 2]].Position });
+
+	std::map<float, IntersectionData> sorted;
+
+	for (int i = 0; i < mesh->indices.size() / 3; i++) {
+		std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[i * 3]].Position, mesh->vertices[mesh->indices[i * 3 + 1]].Position,mesh->vertices[mesh->indices[i * 3 + 2]].Position });
 		if (intersection.has_value()) {
-			intersections.push_back(intersection.value());
+			sorted[Magnitude2(intersection.value() - ray_origin)] = {intersection.value(),i};
+
+			//intersections.push_back(intersection.value());
 		}
 	}
-	
+
+	if (sorted.size()>0) 
+	DivideFace(mesh,(*sorted.begin()).second.face, (*sorted.begin()).second.intersection);
+
 	if (intersections.size() > 0) return intersections;
 	else return {};
-}
-
-void DivideFace() {
-
 }
 
 #endif

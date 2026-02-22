@@ -57,7 +57,7 @@ public:
 		return tr;
 	}
 
-	float SquaredMagnitude() {
+	float ScaleMagnitude2() {
 		return scale.x* scale.x + scale.y* scale.y + scale.z* scale.z;
 	}
 

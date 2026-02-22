@@ -28,7 +28,7 @@ struct AxisCollisionCN {
 
 glm::vec3 CalculateTriangleNormal(Triangle t);
 
-float SquaredMagnitude(const glm::vec3& v);
+float Magnitude2(const glm::vec3& v);
 
 float Magnitude(const glm::vec3& v);
 

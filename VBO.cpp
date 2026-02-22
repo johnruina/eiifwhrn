@@ -3,8 +3,9 @@
 
 VBO::VBO()
 {
-	glGenBuffers(1, &ID);
 }
+
+
 
 void VBO::Bind()
 {
@@ -25,4 +26,5 @@ void VBO::Unbind()
 void VBO::Delete()
 {
 	glDeleteBuffers(1, &ID);
+	ID = 0;
 }

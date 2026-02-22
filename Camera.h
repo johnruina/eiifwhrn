@@ -22,9 +22,12 @@ public:
 	int height;
 	t_package t;
 
+	float yaw;
+	float pitch;
+
 	const float originalspeed = 0.08f;
 	float speed = 0.08f;
-	float sensitivity = 0.08f;
+	float sensitivity = 0.001f;
 
 	Camera(int width, int height, glm::vec3 position);
 
@@ -56,8 +59,10 @@ public:
 		xoffset *= sensitivity;
 		yoffset *= sensitivity;
 
-		t.RotateByQuaternion(glm::angleAxis(glm::radians(xoffset), glm::vec3(0.0f, 1.0f, 0.0f)));
-		t.RotateByQuaternion(glm::angleAxis(glm::radians(yoffset),t.GetRightVector()));
+		yaw += xoffset;
+		pitch += yoffset;
+		pitch = glm::clamp(pitch, -glm::radians(89.0f), glm::radians(89.0f));
+		t.RotateToEulerAngles({pitch,yaw,0.0f});
 		t.NormalizeRotation();
 		//OPTIMIZATIONS ARE TO BE HAD
 		

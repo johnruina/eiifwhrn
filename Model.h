@@ -29,7 +29,6 @@ class Model : public Object, public Renderable {
 public:
 	t_package t;
 	p_package p;
-	Physics* bindedphysicsengine;
 	Model(const char* path) {
 		LoadModel(path);
 		//NormalizeVertices();
@@ -37,66 +36,39 @@ public:
 	}
 	
 	std::vector<Mesh*> ReturnMeshes() {
-		std::vector<Mesh*> tr = {};
-		for (Mesh& mesh : meshes) {
-			tr.emplace_back(&mesh);
-		}
-		return tr;
+		return meshes;
 	}
 	
 	float GetVolume() {
 		float runningtotal = 0.0f;
 		glm::vec3 modelscale = t.GetScale();
-		for (const Mesh mesh : meshes) {
-			runningtotal += mesh.GetVolume() * modelscale.x * modelscale.y * modelscale.z;
+		for (const Mesh* mesh : meshes) {
+			runningtotal += mesh->GetVolume() * modelscale.x * modelscale.y * modelscale.z;
 		}
 		return runningtotal;
 	}
 
-	void Slice(glm::vec3 origin, glm::quat slicequat) {
-
-		glm::vec3 pos = t.GetTranslation() + (glm::conjugate(slicequat) * (origin - t.GetTranslation()));;
-
-
-	}
-
-	void InitializePhysics() {
-
-	}
-
-	void AddPhysicsToEngine(Physics& engine) {
-		engine.AddObject(&p);
-		bindedphysicsengine = &engine;
-	}
-
-	void RemovePhysicsFromEngine() {
-		if (bindedphysicsengine != nullptr) {
-			bindedphysicsengine->RemoveObject(&p);
-			bindedphysicsengine = nullptr;
-		}
-	}
-
 	void Render(Shader& shader) override
-	{
+	{	
+		glm::mat4 matrix = t.GetMatrix();
 		for (unsigned int i = 0; i < meshes.size(); i++) {
-			meshes[i].Render(shader,t.GetMatrix());
+			meshes[i]->Render(shader,matrix);
 		}
 	}
 	void RenderWireframe(Shader& shader)
 	{
 		for (unsigned int i = 0; i < meshes.size(); i++) {
-			meshes[i].RenderWireframe(shader);
+			meshes[i]->RenderWireframe(shader);
 		}
 	}
 
 	~Model() {
-		RemovePhysicsFromEngine();
-		for (Mesh& mesh : meshes) {
-			mesh.~Mesh();
+		for (Mesh* mesh : meshes) {
+			mesh->~Mesh();
 		}
 	}
 
-	std::vector<Mesh> meshes;
+	std::vector<Mesh*> meshes;
 private:
 	
 	void NormalizeVertices() {
@@ -107,8 +79,8 @@ private:
 		float biggestz;
 		float smallestz;
 		bool initalized = false;
-		for (Mesh& mesh : meshes) {
-			for (Vertex& vertex : mesh.vertices) {
+		for (Mesh* mesh : meshes) {
+			for (Vertex& vertex : mesh->vertices) {
 				if (not initalized) {
 					biggestx = vertex.Position.x;
 					smallestx = vertex.Position.x;
@@ -142,15 +114,15 @@ private:
 			float yf = biggesty - smallesty;
 			float zf = biggestz - smallestz;
 
-			for (Mesh& mesh : meshes) {
-				for (Vertex& vertex : mesh.vertices) {
+			for (Mesh* mesh : meshes) {
+				for (Vertex& vertex : mesh->vertices) {
 					vertex.Position = glm::vec3(
 						(vertex.Position.x - midx)/xf,
 						(vertex.Position.y - midy)/yf,
 						(vertex.Position.z - midz)/zf
 					);
 				}
-				mesh.UpdateVertices();
+				mesh->UpdateVertices();
 			}
 		
 		}
@@ -186,7 +158,7 @@ private:
 		}
 	};
 
-	Mesh processMesh(aiMesh* mesh, const aiScene* scene)
+	Mesh* processMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		std::vector<Vertex> vertices;
 		std::vector<unsigned int> indices;
@@ -229,7 +201,7 @@ private:
 				indices.push_back(face.mIndices[j]);
 		}
 
-		return Mesh(vertices, indices);
+		return new Mesh(vertices, indices);
 	}
 };
 

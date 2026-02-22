@@ -33,7 +33,9 @@ public:
     Box() {
         gui = true;
         shadertype = ShaderType::BoxShader;
-
+        boxVBO.GenerateID();
+        boxVAO.GenerateID();
+        boxVAO.Bind();
         boxVBO.BufferData(&quadVertices, sizeof(quadVertices));
 
         boxVAO.LinkVBO(boxVBO, 0, 2, GL_FLOAT, 4 * sizeof(float), (void*)0);
