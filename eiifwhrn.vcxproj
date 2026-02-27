@@ -162,7 +162,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="shaderClass.cpp" />
-    <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="SoundSystem.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="tFunctions.cpp" />
     <ClCompile Include="VAO.cpp" />
@@ -190,7 +190,7 @@
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="shaderClass.h" />
-    <ClInclude Include="Audio.h" />
+    <ClInclude Include="SoundSystem.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="t.h" />
     <ClInclude Include="t2d.h" />

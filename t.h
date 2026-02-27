@@ -118,6 +118,18 @@ public:
 		scale = glm::vec3(e);
 	}
 
+	void ScaleToX(GLfloat e) noexcept {
+		scale.x = e;
+	}
+
+	void ScaleToY(GLfloat e) noexcept {
+		scale.y = e;
+	}
+
+	void ScaleToZ(GLfloat e) noexcept {
+		scale.z = e;
+	}
+
 	void RotateToQuaternion(glm::quat q) noexcept {
 		orient = q;
 	}

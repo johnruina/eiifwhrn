@@ -132,8 +132,12 @@ public:
 				std::vector<GLuint> posindices;
 				std::vector<GLuint> negindices;
 
-				std::map<float,int> posnewvertices;
-				std::map<float, int> negnewvertices;
+				std::vector<int> posnewvertices;
+				std::vector<int> negnewvertices;
+
+				glm::vec3 center;
+				glm::vec3 negnormal = slicequat * glm::vec3(0.0f,1.0f,0.0f);
+				glm::vec3 posnormal = -negnormal;
 
 				for (int i = 0; i < indices.size()/3; i++) {
 					//I IS THE CURRENT TRIANGLE
@@ -209,15 +213,14 @@ public:
 						v2.Normal = glm::mix(vertices[niso2].Normal, vertices[iso].Normal, v2factor);
 						v1.TexCoords = glm::mix(vertices[niso1].TexCoords, vertices[iso].TexCoords, v1factor);
 						v2.TexCoords = glm::mix(vertices[niso2].TexCoords, vertices[iso].TexCoords, v2factor);
-						
+
 						if (isopos) {
 							//THE ISOLATED VERTEX IS IN THE POS MESH
 							posvertices.push_back(v1);
 							posvertices.push_back(v2);
 							posvertices.push_back(vertices[iso]);
-
-							posnewvertices[v1pos.x] = posvertices.size() - 3;
-							posnewvertices[v2pos.x] = posvertices.size() - 2;
+							posnewvertices.push_back(posvertices.size() - 3);
+							posnewvertices.push_back(posvertices.size() - 2);
 
 							posindices.push_back(posvertices.size() - 3);
 							posindices.push_back(posvertices.size() - 2);
@@ -236,8 +239,8 @@ public:
 							negindices.push_back(negvertices.size() - 2);
 							negindices.push_back(negvertices.size() - 4);
 
-							negnewvertices[v1pos.x] = negvertices.size() - 2;
-							negnewvertices[v2pos.x] = negvertices.size() - 1;
+							negnewvertices.push_back(negvertices.size() - 2);
+							negnewvertices.push_back(negvertices.size() - 1);
 						}
 						else {
 							//THE ISOLATED VERTEX IS IN THE NEG MESH
@@ -249,8 +252,8 @@ public:
 							negindices.push_back(negvertices.size() - 2);
 							negindices.push_back(negvertices.size() - 1);
 
-							negnewvertices[v1pos.x] = negvertices.size() - 3;
-							negnewvertices[v2pos.x] = negvertices.size() - 2;
+							negnewvertices.push_back(negvertices.size() - 3);
+							negnewvertices.push_back(negvertices.size() - 2);
 
 							posvertices.push_back(vertices[niso1]);
 							posvertices.push_back(vertices[niso2]);
@@ -265,82 +268,81 @@ public:
 							posindices.push_back(posvertices.size() - 2);
 							posindices.push_back(posvertices.size() - 4);
 
-							posnewvertices[v1pos.x] = posvertices.size() - 2;
-							posnewvertices[v2pos.x] = posvertices.size() - 1;
+							posnewvertices.push_back(posvertices.size() - 2);
+							posnewvertices.push_back(posvertices.size() - 1);
 						}
 					}
 				}
-				/*
-				int last2i = -1;
-				int last1i = -1;
-				bool flip = true;
-				for (auto it = negnewvertices.begin(); it != negnewvertices.end(); ++it)
-				{
-					if (last2i != -1 and last1i != -1) {
-						negvertices.push_back(negvertices[(*it).second]);
-						if (flip) {
-							negvertices.push_back(negvertices[last2i]);
-							negvertices.push_back(negvertices[last1i]);
+
+				if (negnewvertices.size() >= 3) {
+
+					std::sort(negnewvertices.begin(), negnewvertices.end(), [&negvertices](int& a, int& b) {
+						return negvertices[a].Position.x > negvertices[b].Position.x;
+					});
+
+					for (int i = 2; i < negnewvertices.size(); i++)
+					{
+						int index0 = negnewvertices[i];
+						int index1 = negnewvertices[i - 1];
+						int index2 = negnewvertices[i - 2];
+						
+						negvertices.push_back(negvertices[index0]);
+						if ((i+1) % 2 == 0) {
+							negvertices.push_back(negvertices[index2]);
+							
+							negvertices.push_back(negvertices[index1]);
 						}
 						else {
-							negvertices.push_back(negvertices[last1i]);
-							negvertices.push_back(negvertices[last2i]);
+							negvertices.push_back(negvertices[index1]);
+							negvertices.push_back(negvertices[index2]);
 						}
-
-						negindices.push_back(negvertices.size() - 3);
+						
+						negindices.push_back(negvertices.size()-3);
 						negindices.push_back(negvertices.size() - 2);
 						negindices.push_back(negvertices.size() - 1);
 					}
-
-					last2i = last1i;
-					last1i = (*it).second;
-					flip = not flip;
-						
 				}
-				last2i = -1;
-				last1i = -1;
-				flip = true;
-				for (auto it = posnewvertices.begin(); it != posnewvertices.end(); ++it)
-				{
-					if (last2i != -1 and last1i != -1) {
-						posvertices.push_back(posvertices[(*it).second]);
-						if (flip) {
-							posvertices.push_back(posvertices[last2i]);
-							posvertices.push_back(posvertices[last1i]);
+				if (posnewvertices.size() >= 3) {
+
+					for (int i = 2; i < posnewvertices.size(); i++)
+					{
+						int index0 = posnewvertices[i];
+						int index1 = posnewvertices[i - 1];
+						int index2 = posnewvertices[i - 2];
+						posvertices.push_back(posvertices[index0]);
+						if (i% 2 == 0) {
+							posvertices.push_back(posvertices[index2]);
+							posvertices.push_back(posvertices[index1]);
 						}
 						else {
-							posvertices.push_back(posvertices[last1i]);
-							posvertices.push_back(posvertices[last2i]);
+							posvertices.push_back(posvertices[index1]);
+							posvertices.push_back(posvertices[index2]);
 						}
 
 						posindices.push_back(posvertices.size() - 3);
 						posindices.push_back(posvertices.size() - 2);
 						posindices.push_back(posvertices.size() - 1);
 					}
-
-					last2i = last1i;
-					last1i = (*it).second;
-					flip = not flip;
 				}
-				*/
+
 				if (posindices.size() > 0) {
 					Mesh* posmesh = Clone();
 					posmesh->vertices = posvertices;
 					posmesh->indices = posindices;
+					posmesh->t.TranslateBy(slicequat* glm::vec3(0.0f, 0.1f, 0.0f));
+					posmesh->NormalizeVertices();
 					posmesh->UpdateVertices();
 					posmesh->UpdateIndices();
-					posmesh->t.TranslateBy(slicequat* glm::vec3(0.0f,0.1f,0.0f));
-					//posmesh->NormalizeVertices();
 					GetParent()->AddChild(posmesh);
 				}
 				if (negindices.size() > 0) {
 					Mesh* negmesh = Clone();
 					negmesh->indices = negindices;
 					negmesh->vertices = negvertices;
+					negmesh->t.TranslateBy(slicequat* glm::vec3(0.0f, -0.1f, 0.0f));
+					negmesh->NormalizeVertices();
 					negmesh->UpdateVertices();
 					negmesh->UpdateIndices();
-					negmesh->t.TranslateBy(slicequat* glm::vec3(0.0f, -0.1f, 0.0f));
-					//negmesh->NormalizeVertices();
 					GetParent()->AddChild(negmesh);
 				}
 				
@@ -380,6 +382,10 @@ public:
 	}
 
 	void UpdateIndices() {
+		if (ebo.ID == 0) {
+			std::cout << "EBO NOT INITIALIZED\m";
+			return;
+		}
 		if (indices.size() > 0) {
 		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, NULL, sizeof(indices), &indices[0]);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.ID);
@@ -390,6 +396,9 @@ public:
 	}
 
 	void NormalizeVertices() {
+		if (vertices.size() == 0) {
+			std::cout << "TRIED TO NORMALIZED ZERO VERTICES???\n";
+		}
 		float biggestx = FLT_MIN;
 		float smallestx = FLT_MAX;
 		float biggesty = FLT_MIN;
@@ -404,24 +413,45 @@ public:
 			smallesty = std::min(smallesty, vertex.Position.y);
 			biggestz = std::max(biggestz, vertex.Position.z);
 			smallestz = std::min(smallestz, vertex.Position.z);
-			
 		}
 
-		t.ScaleBy(glm::vec3(biggestx - smallestx, biggesty - smallesty, biggestz - smallestz));
+		float xf = biggestx - smallestx;
+		float yf = biggesty - smallesty;
+		float zf = biggestz - smallestz;
 
 		float midx = (biggestx + smallestx) / 2.0f;
 		float midy = (biggesty + smallesty) / 2.0f;
 		float midz = (biggestz + smallestz) / 2.0f;
-		float xf = biggestx - smallestx;
-		float yf = biggesty - smallesty;
-		float zf = biggestz - smallestz;
-		t.TranslateTo({midx,midy,midz});
+		t.TranslateBy(glm::vec3(midx, midy, midz) * t.GetScale());
+
+		t.ScaleBy(glm::vec3(xf,yf,zf));
+		glm::vec3 scale = t.GetScale();
+		if (scale.x == 0.0f) {
+			t.ScaleToX(xf);
+		}
+		if (scale.y == 0.0f) {
+			t.ScaleToY(yf);
+		}
+		if (scale.z == 0.0f) {
+			t.ScaleToZ(zf);
+		}
+
 		for (Vertex& vertex : vertices) {
 			vertex.Position = glm::vec3(
 				(vertex.Position.x - midx) / xf,
 				(vertex.Position.y - midy) / yf,
 				(vertex.Position.z - midz) / zf
 			);
+
+			if (xf == 0.0f) {
+				vertex.Position.x = 0.0f;
+			}
+			if (yf == 0.0f) {
+				vertex.Position.y = 0.0f;
+			}
+			if (zf == 0.0f) {
+				vertex.Position.z = 0.0f;
+			}
 		}
 	}
 

@@ -17,6 +17,7 @@
 #include "Vertex.h"
 #include "texture.h"
 #include "Camera.h"
+#include "RenderSystem.h"
 
 class Particle {
 public:
@@ -41,7 +42,7 @@ public:
 private:
 };
 
-class ParticleEmitter {
+class ParticleEmitter : public Renderable {
 public:
 
 	enum EmitDirection {
@@ -69,14 +70,18 @@ public:
 
 	Texture* tex;
 
-	Mesh mesh;
+	Mesh* mesh;
 	
 	ParticleEmitter() {
-		mesh = Mesh(quadVertices3D, quadIndices3D);
+		mesh = new Mesh(quadVertices3D, quadIndices3D);
 	}
 
 	ParticleEmitter(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
-		mesh = Mesh(meshvertices, meshindices);
+		mesh = new Mesh(meshvertices, meshindices);
+	}
+
+	~ParticleEmitter() {
+		mesh->Delete();
 	}
 
 	void Emit() {
@@ -119,10 +124,10 @@ public:
 	}
 
 	void Render(Shader ShaderProgram, Camera& camera) {
-
+		if (particles.size() <= 0) return;
 		ShaderProgram.Activate();
 
-		mesh.vao.Bind();
+		mesh->vao.Bind();
 
 		ShaderProgram.Set4F("color",color);
 
@@ -133,25 +138,61 @@ public:
 			ShaderProgram.SetInt("tex", 0);
 		}
 		else glBindTexture(GL_TEXTURE_2D, 0);
+		std::vector<glm::mat4> matrices;
 
-		std::map<float, Particle*> sorted;
-		for (unsigned int i = 0; i < particles.size(); i++)
-		{
-			float distance = glm::length(camera.t.GetTranslation() - particles[i]->t.GetTranslation());
-			sorted[distance] = particles[i];
+		if (color.w != 1.0f) {
+			std::map<float, Particle*> sorted;
+			for (unsigned int i = 0; i < particles.size(); i++)
+			{
+				sorted[Magnitude2(camera.t.GetTranslation() - particles[i]->t.GetTranslation())] = particles[i];
+			}
+			for (std::map<float, Particle*>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+			{
+				if (facecamera) {
+					matrices.emplace_back(it->second->t.GetTranslationMatrix() * camera.t.GetRotationMatrix() * it->second->t.GetScaleMatrix());
+				}
+				else {
+					matrices.emplace_back(it->second->t.GetMatrix());
+				}
+			}
 		}
+		else {
+			for (int i = 0; i < particles.size(); i++)
+			{
+				if (facecamera) {
+					matrices.emplace_back(particles[i]->t.GetTranslationMatrix() * camera.t.GetRotationMatrix() * particles[i]->t.GetScaleMatrix());
+				}
+				else {
+					matrices.emplace_back(particles[i]->t.GetMatrix());
+				}
+			}
+		}
+		std::cout << particles.size()<<'\n';
+		unsigned int buffer;
+		glGenBuffers(1, &buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer);
+		glBufferData(GL_ARRAY_BUFFER, particles.size() * sizeof(glm::mat4), &matrices[0], GL_STATIC_DRAW);
 
-		for (std::map<float, Particle*>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
-		{
-			if (facecamera) {
-				ShaderProgram.SetMat4("modl", it->second->t.GetTranslationMatrix() * camera.t.GetRotationMatrix() * it->second->t.GetScaleMatrix());
-			}
-			else {
-				ShaderProgram.SetMat4("modl", it->second->t.GetMatrix());
-			}
-			glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
-		}
-		mesh.vao.Unbind();
+		mesh->vao.Bind();
+		// vertex attributes
+		std::size_t vec4Size = sizeof(glm::vec4);
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(1 * vec4Size));
+		glEnableVertexAttribArray(5);
+		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+		glVertexAttribDivisor(3, 1);
+		glVertexAttribDivisor(4, 1);
+		glVertexAttribDivisor(5, 1);
+		glVertexAttribDivisor(6, 1);
+
+		glDrawElementsInstanced(GL_TRIANGLES, mesh->indices.size(), GL_UNSIGNED_INT, 0, particles.size());
+
+		mesh->vao.Unbind();
 	}
 
 private:

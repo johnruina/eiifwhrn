@@ -10,11 +10,12 @@
 namespace wrl = Microsoft::WRL;
 
 
-class Audio {
+
+class SoundSystem {
 public:
 	//funcs
-	Audio();
-	~Audio();
+	SoundSystem();
+	~SoundSystem();
 	void PlayAudio(LPCWSTR filename);
 
 	struct AudioData {
@@ -34,9 +35,12 @@ private:
 	HRESULT GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition);
 	HRESULT ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset);
 private:
+	X3DAUDIO_LISTENER Listener = {};
+
+	X3DAUDIO_DSP_SETTINGS DSPSettings = {};
 
 	//pvariables
-	//X3DAUDIO_HANDLE X3DInstance;
+	X3DAUDIO_HANDLE X3DInstance;
 	wrl::ComPtr<IXAudio2> xaudio2{};
 	IXAudio2MasteringVoice* xaudio2masteringvoice;
 	AudioObject sources[16] = {};

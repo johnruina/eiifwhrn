@@ -98,7 +98,7 @@
 #include "Keyboard.h"
 #include "Model.h"
 #include "DirLight.h"
-#include "Audio.h"
+#include "SoundSystem.h"
 #include "tFunctions.h"
 #include "Debug.h"
 #include "Cubemap.h"
@@ -301,7 +301,6 @@ int main() {
         "assets/miramar_lf.tga"
     };
     Cubemap skybox(faces);
-
     //FRAMEBUFFER
     FBO framebuffer;
     framebuffer.Bind();
@@ -345,28 +344,31 @@ int main() {
     unsigned long prev = 0;
 
     //DEBUG/SHORTSTAY STUFF ONLY
-    Audio AudioSystem;
-    AudioSystem.PlayAudio(L"Agartha.wav");
+    SoundSystem SoundSystem;
+    SoundSystem.PlayAudio(L"Agartha.wav");
 
     //STUFF
 
-    ParticleEmitter* snow = new ParticleEmitter;
-    snow->t.TranslateTo({ 0.0f,10.0f,0.0f });
-    snow->t.RotateToQuaternion(glm::quat(glm::vec3(glm::radians(90.0f),0.0f, 0.0f)));
-    snow->speed = 30.0f;
-    snow->lifespan = 2.0f;
-    snow->angularvelocity = {0.0f,0.0f,glm::radians(10.0f)};
-    snow->size = {0.04f,0.4f,0.0f};
-    snow->emitangle = {glm::radians(60.0f),glm::radians(60.0f) ,glm::radians(60.0f) };
-    snow->facecamera = false;
-    snow->color = {1.0f,1.0f,1.0f,1.0f};
-    snow->emitdirection = ParticleEmitter::EmitDirection::Perpendicular;
-    pes.push_back(snow);
+    ParticleEmitter* rain = new ParticleEmitter;
+    rain->t.TranslateTo({ 0.0f,10.0f,0.0f });
+    rain->t.RotateToQuaternion(glm::quat(glm::vec3(glm::radians(90.0f),0.0f, 0.0f)));
+    rain->speed = 30.0f;
+    rain->lifespan = 0.4f;
+    rain->angularvelocity = {0.0f,0.0f,glm::radians(10.0f)};
+    rain->size = {0.04f,0.4f,0.0f};
+    rain->emitangle = {glm::radians(60.0f),glm::radians(360.0f) ,glm::radians(60.0f) };
+    rain->facecamera = false;
+    rain->color = {1.0f,1.0f,1.0f,1.0f};
+    rain->emitdirection = ParticleEmitter::EmitDirection::Perpendicular;
+    pes.push_back(rain);
 
     ParticleEmitter* pe = new ParticleEmitter;
     pe->t.TranslateTo({0.0f,2.0f,2.0f});
+    pe->color = {1.0f,1.0f,1.0f,1.0f};
+    pe->lifespan = 10.0f;
+    pe->speed = 0.5f;
     pes.push_back(pe);
-
+    
     Box* crosshair = new Box();
     crosshair->Color = {0.0f,0.0f,0.0f};
     crosshair->t2d.center = {0.5f,0.5f};
@@ -389,7 +391,7 @@ int main() {
 
     Texture* snowflake = new Texture("assets/snowflake.png");
     pe->tex = snowflake;
-    snow->tex = snowflake;
+    rain->tex = snowflake;
 
     Model leiheng("leihengsword.obj");
     leiheng.t.TranslateTo({ 5.0f,10.0f,0.0f });
@@ -400,24 +402,25 @@ int main() {
         meshes.AddChild(newmesh);
     }
     leiheng.t.TranslateTo({ 10.0f,4.0f,0.0f });
-
     Mesh* floor = CreateCubeMesh();
     floor->t.ScaleTo({ 10.0f,0.4f,10.0f });
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
     meshes.AddChild(floor);
-
-    Mesh* cube = CreateCubeMesh();
+    Mesh* cube = CreatePlaneMesh();
     cube->t.ScaleTo({ 1.0f,1.0f,1.0f });
     cube->t.TranslateTo({ 5.0f,4.0f,6.5f });
     meshes.AddChild(cube);
 
-    Mesh* bigasswall = CreateCubeMesh();
-    bigasswall->t.ScaleTo({ 1.0f,200.0f,200.0f });
-    bigasswall->t.TranslateTo({ 20.0f,4.0f,6.5f });
-    meshes.AddChild(bigasswall);
+    //Mesh* bigasswall = CreateCubeMesh();
+    //bigasswall->t.ScaleTo({ 1.0f,200.0f,200.0f });
+    //bigasswall->t.TranslateTo({ 20.0f,4.0f,6.5f });
+    //meshes.AddChild(bigasswall);
 
     SkyboxShader->Activate();
     SkyboxShader->SetInt("skybox",0);
+
+    //debug
+    bool renderwireframe = false;
 
     //LOOP
     while (!glfwWindowShouldClose(window))
@@ -463,7 +466,15 @@ int main() {
                     if (Mesh* mesh = static_cast<Mesh*>(e))
                     mesh->Slice(camera.t.GetTranslation(), LookAt(camera.t.GetFrontVector()));
                 }
-                std::cout << '\n';
+            }
+            else  if (buffer.GetCode() == 'X' and buffer.IsPress()) {
+                for (auto e : meshes.GetChildren()) {
+                    if (Mesh* mesh = static_cast<Mesh*>(e))
+                        mesh->Slice(camera.t.GetTranslation(), LookAt(camera.t.GetFrontVector())* glm::quat({ 0.0f, 0.0f, glm::radians(90.0f) }));
+                }
+            }
+            else  if (buffer.GetCode() == 'H' and buffer.IsPress()) {
+                renderwireframe = not renderwireframe;
             }
         }
 
@@ -472,8 +483,6 @@ int main() {
             pe->t.RotateToQuaternion(camera.t.GetRotationQuaternion());
             pe->Emit();
         }
-
-        //RayIntersectsModel({ camera.t.GetTranslation(), camera.t.GetFrontVector() * 100.0f }, leiheng);
 
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {
@@ -486,15 +495,10 @@ int main() {
             }
             */
         }
-
-        snow->Emit();
-        snow->Emit();
-        snow->Emit();
-        snow->Emit();
-        snow->Emit();
-        snow->Emit();
-        snow->Emit();
-        snow->Emit();
+        rain->t.TranslateTo(camera.t.GetTranslation() + glm::vec3(0.0f,5.0f,0.0f));
+        for (int i = 0; i < 100; i++) {
+            rain->Emit();
+        }
 
         for (ParticleEmitter* pe : pes) {
             pe->Step(deltatime);
@@ -556,8 +560,9 @@ int main() {
         for (Object* mesh : meshes.GetChildren()) {
 
             if (Mesh* boxe = static_cast<Mesh*>(mesh))
-
-            boxe->Render(*MeshShader);
+                if (renderwireframe)
+                    boxe->RenderWireframe(*MeshShader);
+                else boxe->Render(*MeshShader);
         }
         
         glDisable(GL_CULL_FACE);
@@ -592,7 +597,7 @@ int main() {
             if (box->Opacity == 0.0f) continue;
             
             if (ImageBox* boxe = dynamic_cast<ImageBox*>(box)) {
-                box->Render(*ImageBoxShader, width, height);
+                //box->Render(*ImageBoxShader, width, height);
             }
             else if (TextBox* boxe = dynamic_cast<TextBox*>(box)) {
                 boxe->Render(*BoxShader, width, height);

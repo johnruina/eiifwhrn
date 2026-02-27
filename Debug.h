@@ -10,7 +10,6 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
-#include "Audio.h"
 #include "Camera.h"
 #include "shaderClass.h"
 #include "VBO.h"
@@ -116,6 +115,21 @@ std::vector<unsigned int> CUBEINDICES = {
     20, 23, 21,  23, 22, 21
 };
 
+std::vector<Vertex> PLANEVERTICES = {
+{{0.5f,0.0f,0.5f}, {0.0f,1.0f,0.0f},{ 0.0f,0.0f} },
+{{-0.5f,0.0f,0.5f}, {0.0f,1.0f,0.0f},{ 1.0f,0.0f}},
+{{-0.5f,0.0f,-0.5f}, {0.0f,1.0f,0.0f},{ 1.0f,1.0f}},
+{{0.5f,0.0f,-0.5f}, {0.0f,1.0f,0.0f}, {0.0f,1.0f}},
+};
+
+std::vector<unsigned int> PLANEINDICES = {
+    0,1,2,
+    2,3,0,
+
+    2,1,0,
+    0,3,2,
+};
+
 void Output(float& to) {
     std::cout << to << '\n';
 }
@@ -130,6 +144,9 @@ void Output(glm::vec3 tooutput) {
 
 Mesh* CreateCubeMesh() {
     return new Mesh(CUBEVERTICES, CUBEINDICES);
+}
+Mesh* CreatePlaneMesh() {
+    return new Mesh(PLANEVERTICES, PLANEINDICES);
 }
 
 #endif

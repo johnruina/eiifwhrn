@@ -1,5 +1,5 @@
 
-#include "Audio.h"
+#include "SoundSystem.h"
 
 #define audio_throw_failed(hrcall) if (FAILED(hrcall)) throw;
 
@@ -10,7 +10,7 @@
 #define fourccXWMA 'AMWX'
 #define fourccDPDS 'sdpd'
 
-Audio::Audio()
+SoundSystem::SoundSystem()
 {
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     audio_throw_failed(::XAudio2Create(&xaudio2, 0, XAUDIO2_DEFAULT_PROCESSOR));
@@ -33,14 +33,16 @@ Audio::Audio()
     waveformatex.nBlockAlign = waveformatex.nChannels * bitspersample / 8;
     waveformatex.nAvgBytesPerSec = waveformatex.nSamplesPerSec * waveformatex.nBlockAlign;
     waveformatex.wBitsPerSample = bitspersample;
-    waveformatex.cbSize = 0;   
+    waveformatex.cbSize = 0;      
 
-    //DWORD dwChannelMask;
-    //xaudio2masteringvoice->GetChannelMask(&dwChannelMask);
-    //X3DAudioInitialize(dwChannelMask, X3DAUDIO_SPEED_OF_SOUND, X3DInstance);
+    DWORD dwChannelMask;
+    xaudio2masteringvoice->GetChannelMask(&dwChannelMask);
+
+    X3DAudioInitialize(dwChannelMask, X3DAUDIO_SPEED_OF_SOUND, X3DInstance);
+
 }
 
-Audio::~Audio() {
+SoundSystem::~SoundSystem() {
     if (xaudio2)
     {
         xaudio2->Release();
@@ -52,7 +54,7 @@ Audio::~Audio() {
     return;
 }
 
-void Audio::PlayAudio(LPCWSTR filename)
+void SoundSystem::PlayAudio(LPCWSTR filename)
 {
     AudioData audiodata = LoadAudioData(filename);
 
@@ -68,13 +70,14 @@ void Audio::PlayAudio(LPCWSTR filename)
     buffer.AudioBytes = audiodata.size;  //size of the audio buffer in bytes
     buffer.pAudioData = audiodata.data;  //buffer containing audio data
     buffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
+    
     IXAudio2SourceVoice* xaudio2sourcevoice;
     audio_throw_failed(xaudio2->CreateSourceVoice(&xaudio2sourcevoice, (WAVEFORMATEX*)&audiodata.format));
     audio_throw_failed(xaudio2sourcevoice->SubmitSourceBuffer(&buffer));
     audio_throw_failed(xaudio2sourcevoice->Start(0));
 }
 
-Audio::AudioData Audio::LoadAudioData(LPCWSTR filename)
+SoundSystem::AudioData SoundSystem::LoadAudioData(LPCWSTR filename)
 {
     AudioData result = {};
 
@@ -121,7 +124,7 @@ Audio::AudioData Audio::LoadAudioData(LPCWSTR filename)
 
 //shenanigans i dont want to touch
 
-HRESULT Audio::GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition) {
+HRESULT SoundSystem::GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition) {
     HRESULT hr = S_OK;
     if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, 0, NULL, FILE_BEGIN))
         return HRESULT_FROM_WIN32(GetLastError());
@@ -174,7 +177,7 @@ HRESULT Audio::GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& d
     return S_OK;
 }
 
-HRESULT Audio::ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset) {
+HRESULT SoundSystem::ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset) {
     HRESULT hr = S_OK;
     if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, bufferoffset, NULL, FILE_BEGIN))
         return HRESULT_FROM_WIN32(GetLastError());

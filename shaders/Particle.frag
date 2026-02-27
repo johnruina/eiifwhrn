@@ -10,5 +10,9 @@ uniform vec4 color;
 
 void main()
 {
-    FragColor =texture(tex,texCoord) * color;
+    vec4 base = texture(tex,texCoord) * color;
+    if (base.w == 0.0f) {
+        discard;
+    }
+    FragColor = base;
 }
