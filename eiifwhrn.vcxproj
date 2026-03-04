@@ -155,7 +155,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Cubemap.h" />
     <ClCompile Include="EBO.cpp" />
     <ClCompile Include="glad.c" />
@@ -169,6 +168,8 @@
     <ClCompile Include="VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="common.h" />
+    <ClInclude Include="Engine.h" />
     <ClInclude Include="Folder.h" />
     <ClInclude Include="font.h" />
     <ClInclude Include="Gui.h" />
@@ -199,6 +200,7 @@
     <ClInclude Include="VAO.h" />
     <ClInclude Include="VBO.h" />
     <ClInclude Include="Vertex.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\2DText.frag" />

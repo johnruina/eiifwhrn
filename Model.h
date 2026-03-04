@@ -222,7 +222,6 @@ std::optional<std::vector<glm::vec3>> RayIntersectsModel(const Ray& ray, Model& 
 		for (int i = 0; i < mesh->indices.size() / 3; i++) {
 			std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[ i * 3]].Position, mesh->vertices[mesh->indices[i * 3+1]].Position,mesh->vertices[mesh->indices[i * 3+2]].Position });
 			if (intersection.has_value()) {
-				std::cout << ie << '\n';
 				intersections.push_back(intersection.value());
 			}
 		}

@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "common.h"
 #include "VAO.h"
 #include "VBO.h"
 #include "QuadVertices.h"

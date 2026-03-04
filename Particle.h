@@ -31,7 +31,7 @@ public:
 	void Render() {
 
 	}
-
+	
 	void Step(float dt) {
 		t.RotateByEulerAnglesCumulate(angularvelocity * dt);
 		t.TranslateBy(linearvelocity*dt);
@@ -167,7 +167,6 @@ public:
 				}
 			}
 		}
-		std::cout << particles.size()<<'\n';
 		unsigned int buffer;
 		glGenBuffers(1, &buffer);
 		glBindBuffer(GL_ARRAY_BUFFER, buffer);

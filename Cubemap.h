@@ -11,7 +11,20 @@
 class Cubemap {
 public:
 	GLuint ID;
+
+    Cubemap() {
+    };
+
 	Cubemap(std::vector<std::string>& faces) {
+        FillCubemap(faces);
+	};
+
+    void FillCubemap(std::vector<std::string>& faces) {
+
+        if (ID != 0) {
+            Delete();
+        }
+
         glGenTextures(1, &ID);
         glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
 
@@ -37,7 +50,8 @@ public:
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	};
+    }
+
     void Bind() {
         glBindTexture(GL_TEXTURE_CUBE_MAP, ID);
     };

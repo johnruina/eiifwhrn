@@ -2,6 +2,8 @@
 
 void Mouse::OnMouseMove(unsigned int x, unsigned int y) noexcept
 {
+    lastX = X;
+    lastY = Y;
     X = x;
     Y = y;
     buffer.push(Mouse::Event(Event::Type::Move, *this));

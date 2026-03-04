@@ -50,7 +50,7 @@ public:
 	void InitializeMesh(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
 		vertices = meshvertices;
 		indices = meshindices;
-
+		this->shadertype = MeshShader;
 		GenerateRenderData();
 		NormalizeVertices();
 		UpdateVertices();
@@ -454,7 +454,7 @@ public:
 			}
 		}
 	}
-
+	
 	virtual void Render(Shader& ShaderProgram, glm::mat4 modlmatrix) {
 		glm::mat4 topass = modlmatrix * t.GetMatrix();
 

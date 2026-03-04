@@ -116,6 +116,11 @@ private:
 	std::vector<p_package*> objects;
 	glm::vec3 gravity = glm::vec3(0, -9.81f, 0);
 public:
+
+	Physics() {
+
+	}
+
 	int GetObjectAmount() const noexcept {
 		return objects.size();
 	}
@@ -215,8 +220,6 @@ public:
 
 		float frictionfactor = 0.5f;
 		glm::vec3 frictionvector = glm::cross(glm::cross(collisionnormal,relativevelocity),collisionnormal);
-
-		std::cout << impulse << '\n';
 
 		if (a->velocity) {
 			a->linearvelocity +=inversemass1 * impulse * (collisionnormal+frictionfactor*frictionvector);

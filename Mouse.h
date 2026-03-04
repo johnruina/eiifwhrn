@@ -69,12 +69,19 @@ public:
 	std::pair<unsigned int, unsigned int> GetPos() {
 		return { X,Y };
 	};
-	unsigned int GetX() const noexcept {
+	int GetX() const noexcept {
 		return X;
 	}
-	unsigned int GetY() const noexcept {
+	int GetY() const noexcept {
 		return Y;
 	}
+	int GetLastX() const noexcept {
+		return lastX;
+	}
+	int GetLastY() const noexcept {
+		return lastY;
+	}
+
 	bool MouseIsInWindow() const noexcept {
 		return IsInWindow;
 	};
@@ -111,8 +118,10 @@ private:
 	bool RightIsDown = false;
 	bool LeftIsDown = false;
 	static constexpr unsigned int bufferSize = 16u;
-	unsigned int X = 0;
-	unsigned int Y = 0;
+	int X = 0;
+	int Y = 0;
+	int lastX = 0;
+	int lastY = 0;
 	int wheeldeltacarry = 0;
 	std::queue<Event> buffer;
 	bool IsInWindow = false;

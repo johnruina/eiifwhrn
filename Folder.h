@@ -4,7 +4,6 @@
 #include "Object.h"
 
 class Folder : public Object {
-
 };
 
 #endif
