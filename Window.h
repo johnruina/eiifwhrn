@@ -20,6 +20,10 @@ public:
 		}
 		glfwMakeContextCurrent(handle);
 	}
+	
+	~Window() {
+		glfwDestroyWindow(handle);
+	}
 
 };
 

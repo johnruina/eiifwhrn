@@ -25,14 +25,11 @@
 #include "Mesh.h"
 #include "Physics.h"
 
-class Model : public Object, public Renderable {
+class Model : public Object, public Renderable, public t_package {
 public:
-	t_package t;
-	p_package p;
 	Model(const char* path) {
 		LoadModel(path);
 		//NormalizeVertices();
-		p.t = &t;
 	}
 	
 	std::vector<Mesh*> ReturnMeshes() {
@@ -204,31 +201,5 @@ private:
 		return new Mesh(vertices, indices);
 	}
 };
-
-std::optional<std::vector<glm::vec3>> RayIntersectsModel(const Ray& ray, Model& model)
-{
-	//USE THIS AFTER A CHEAPER CHECK
-	std::vector<glm::vec3> intersections = {};
-
-	//convert ray to modelspace
-
-	int ie = 0;
-	for (Mesh* mesh : model.ReturnMeshes()) {
-
-		glm::mat4 inverse = glm::inverse(model.t.GetMatrix() * mesh->t.GetMatrix());
-		glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin,1.0f));
-		glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
-
-		for (int i = 0; i < mesh->indices.size() / 3; i++) {
-			std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[ i * 3]].Position, mesh->vertices[mesh->indices[i * 3+1]].Position,mesh->vertices[mesh->indices[i * 3+2]].Position });
-			if (intersection.has_value()) {
-				intersections.push_back(intersection.value());
-			}
-		}
-		ie++;
-	}
-	if (intersections.size() > 0) return intersections;
-	else return {};
-}
 
 #endif

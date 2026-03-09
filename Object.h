@@ -35,6 +35,15 @@ public:
 		return children;
 	}
 
+	Object* GetFirstChildOfName(std::string name) {
+		for (int i = 0; i < children.size(); i++) {
+			if (children[i]->name == name) {
+				return children[i];
+			}
+		};
+		return nullptr;
+	}
+
 	void RemoveFromParent() {
 		if (parent != nullptr) {
 			parent->RemoveChild(this);

@@ -13,6 +13,8 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
+#include "common.h"
+#include "Engine.h"
 #include "RenderSystem.h"
 #include "Object.h"
 #include "VAO.h"
@@ -24,11 +26,15 @@
 #include "Vertex.h"
 #include "texture.h"
 
-class Mesh : public Object , public Renderable {
+struct IntersectionData {
+	glm::vec3 intersection;
+	int face;
+};
+
+class Mesh : public Object , public Renderable, public t_package {
 	friend class Model;
 protected:
 public:
-	t_package t;
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
 	std::vector<Texture> textures;
@@ -57,7 +63,6 @@ public:
 	}
 
 	void GenerateRenderData() {
-
 		vbo.GenerateID();
 		vao.GenerateID();
 		ebo.GenerateID();
@@ -399,20 +404,19 @@ public:
 		if (vertices.size() == 0) {
 			std::cout << "TRIED TO NORMALIZED ZERO VERTICES???\n";
 		}
-		float biggestx = FLT_MIN;
+		float biggestx = -FLT_MAX;
 		float smallestx = FLT_MAX;
-		float biggesty = FLT_MIN;
+		float biggesty = -FLT_MAX;
 		float smallesty = FLT_MAX;
-		float biggestz = FLT_MIN;
+		float biggestz = -FLT_MAX;
 		float smallestz = FLT_MAX;
 		for (Vertex& vertex : vertices) {
-
-			biggestx = std::max(biggestx, vertex.Position.x);
-			smallestx = std::min(smallestx, vertex.Position.x);
-			biggesty = std::max(biggesty, vertex.Position.y);
-			smallesty = std::min(smallesty, vertex.Position.y);
-			biggestz = std::max(biggestz, vertex.Position.z);
-			smallestz = std::min(smallestz, vertex.Position.z);
+			biggestx = glm::max(biggestx, vertex.Position.x);
+			smallestx = glm::min(smallestx, vertex.Position.x);
+			biggesty = glm::max(biggesty, vertex.Position.y);
+			smallesty = glm::min(smallesty, vertex.Position.y);
+			biggestz = glm::max(biggestz, vertex.Position.z);
+			smallestz = glm::min(smallestz, vertex.Position.z);
 		}
 
 		float xf = biggestx - smallestx;
@@ -494,92 +498,85 @@ public:
 		DeleteRenderData();
 		Object::Delete();
 	}
+public:
+	//random ass functions
+	void DivideFace(int face, glm::vec3 centerlocalspace) {
+
+		int v1 = indices[face * 3];
+		int v2 = indices[face * 3 + 1];
+		int v3 = indices[face * 3 + 2];
+
+		Vertex newvertex;
+		newvertex.Position = centerlocalspace;
+		newvertex.TexCoords = { 0.0f,0.0f };
+		newvertex.Normal = CalculateTriangleNormal({ vertices[v1].Position ,vertices[v2].Position ,vertices[v3].Position });
+		vertices.push_back(newvertex);
+		int nvp = vertices.size() - 1;
+
+		indices.erase(indices.begin() + face * 3, indices.begin() + face * 3 + 3);
+
+
+
+		indices.push_back(v1);
+		indices.push_back(v2);
+		indices.push_back(nvp);
+
+		indices.push_back(v2);
+		indices.push_back(v3);
+		indices.push_back(nvp);
+
+		indices.push_back(v3);
+		indices.push_back(v1);
+		indices.push_back(nvp);
+
+		UpdateIndices();
+		UpdateVertices();
+	}
+
+	bool RayIntersectsMeshNoInfo(const Ray& ray)
+	{
+		glm::mat4 inverse = glm::inverse(t.GetMatrix());
+		glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
+		glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
+
+		for (int i = 0; i < indices.size() / 3; i++) {
+			std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { vertices[indices[i * 3]].Position, vertices[indices[i * 3 + 1]].Position,vertices[indices[i * 3 + 2]].Position });
+			if (intersection.has_value()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	std::optional<std::vector<glm::vec3>> RayIntersectsMesh(const Ray& ray, Mesh* mesh)
+	{
+		//USE THIS AFTER A CHEAPER CHECK
+		std::vector<glm::vec3> intersections = {};
+
+		glm::mat4 inverse = glm::inverse(t.GetMatrix());
+		glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
+		glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
+
+
+		std::map<float, IntersectionData> sorted;
+
+		for (int i = 0; i < indices.size() / 3; i++) {
+			std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { vertices[indices[i * 3]].Position, vertices[indices[i * 3 + 1]].Position,vertices[indices[i * 3 + 2]].Position });
+			if (intersection.has_value()) {
+				sorted[Magnitude2(intersection.value() - ray_origin)] = { intersection.value(),i };
+
+				//intersections.push_back(intersection.value());
+			}
+		}
+
+		if (intersections.size() > 0) return intersections;
+		else return {};
+	}
 
 public:
 
 private:
 
 };
-
-void DivideFace(Mesh* mesh, int face, glm::vec3 centerlocalspace) {
-
-	int v1 = mesh->indices[face * 3];
-	int v2 = mesh->indices[face * 3 + 1];
-	int v3 = mesh->indices[face * 3 + 2];
-
-	Vertex newvertex;
-	newvertex.Position = centerlocalspace;
-	newvertex.TexCoords = { 0.0f,0.0f };
-	newvertex.Normal = CalculateTriangleNormal({ mesh->vertices[v1].Position ,mesh->vertices[v2].Position ,mesh->vertices[v3].Position });
-	mesh->vertices.push_back(newvertex);
-	int nvp = mesh->vertices.size() - 1;
-
-	mesh->indices.erase(mesh->indices.begin() + face * 3, mesh->indices.begin() + face * 3+3);
-
-	
-
-	mesh->indices.push_back(v1);
-	mesh->indices.push_back(v2);
-	mesh->indices.push_back(nvp);
-
-	mesh->indices.push_back(v2);
-	mesh->indices.push_back(v3);
-	mesh->indices.push_back(nvp);
-
-	mesh->indices.push_back(v3);
-	mesh->indices.push_back(v1);
-	mesh->indices.push_back(nvp);
-	
-	mesh->UpdateIndices();
-	mesh->UpdateVertices();
-}
-
-bool RayIntersectsMeshNoInfo(const Ray& ray, const Mesh* mesh)
-{
-	glm::mat4 inverse = glm::inverse(mesh->t.GetMatrix());
-	glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
-	glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
-
-	for (int i = 0; i < mesh->indices.size() / 3; i++) {
-		std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[i * 3]].Position, mesh->vertices[mesh->indices[i * 3 + 1]].Position,mesh->vertices[mesh->indices[i * 3 + 2]].Position });
-		if (intersection.has_value()) {
-			return true;
-		}
-	}
-	return false;
-}
-
-struct IntersectionData {
-	glm::vec3 intersection;
-	int face;
-};
-
-std::optional<std::vector<glm::vec3>> RayIntersectsMesh(const Ray& ray, Mesh* mesh)
-{
-	//USE THIS AFTER A CHEAPER CHECK
-	std::vector<glm::vec3> intersections = {};
-
-	glm::mat4 inverse = glm::inverse(mesh->t.GetMatrix());
-	glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
-	glm::vec3 ray_direction = glm::vec3(inverse * glm::vec4(ray.direction, 0.0f));
-
-
-	std::map<float, IntersectionData> sorted;
-
-	for (int i = 0; i < mesh->indices.size() / 3; i++) {
-		std::optional<glm::vec3> intersection = RayIntersectsTriangle({ ray_origin,ray_direction }, { mesh->vertices[mesh->indices[i * 3]].Position, mesh->vertices[mesh->indices[i * 3 + 1]].Position,mesh->vertices[mesh->indices[i * 3 + 2]].Position });
-		if (intersection.has_value()) {
-			sorted[Magnitude2(intersection.value() - ray_origin)] = {intersection.value(),i};
-
-			//intersections.push_back(intersection.value());
-		}
-	}
-
-	if (sorted.size()>0) 
-	DivideFace(mesh,(*sorted.begin()).second.face, (*sorted.begin()).second.intersection);
-
-	if (intersections.size() > 0) return intersections;
-	else return {};
-}
 
 #endif

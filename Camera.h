@@ -20,7 +20,7 @@ const glm::vec3 worldUp = { 0.0f,1.0f,0.0f };
 class Camera {
 public:
 	bool lockedcursor = true;
-	t_package t;
+	t t;
 
 	float yaw = 0.0f;
 	float pitch = 0.0f;
@@ -55,9 +55,7 @@ public:
 	{
 		xoffset *= sensitivity;
 		yoffset *= sensitivity;
-		std::cout << yaw << ' ';
 		yaw += xoffset;
-		std::cout << yaw << '\n';
 		pitch += yoffset;
 		pitch = glm::clamp(pitch, -glm::radians(89.0f), glm::radians(89.0f));
 		t.RotateToEulerAngles({pitch,yaw,0.0f});

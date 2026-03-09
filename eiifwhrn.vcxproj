@@ -157,10 +157,13 @@
   <ItemGroup>
     <ClCompile Include="Cubemap.h" />
     <ClCompile Include="EBO.cpp" />
+    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="RenderSystem.cpp" />
     <ClCompile Include="shaderClass.cpp" />
+    <ClCompile Include="Sound.cpp" />
     <ClCompile Include="SoundSystem.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="tFunctions.cpp" />
@@ -178,6 +181,7 @@
     <ClInclude Include="QuadVertices.h" />
     <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="ResourceManager.h" />
+    <ClInclude Include="Sound.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Debug.h" />

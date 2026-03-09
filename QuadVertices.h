@@ -5,7 +5,7 @@
 #include <vector>
 #include "Vertex.h"
 
-float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+inline float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
 	// positions   // texCoords
 	-1.0f,  1.0f,  0.0f, 1.0f,
 	-1.0f, -1.0f,  0.0f, 0.0f,
@@ -16,7 +16,7 @@ float quadVertices[] = { // vertex attributes for a quad that fills the entire s
 	 1.0f,  1.0f,  1.0f, 1.0f
 };
 
-std::vector<Vertex> quadVertices3D = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+inline std::vector<Vertex> quadVertices3D = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
 	// positions   //normals         // texCoords
 	{{-1.0f,  1.0f,0.0f},  {0.0f,0.0f,1.0f},{0.0f, 1.0f}},
 	{{-1.0f, -1.0f, 0.0f}, {0.0f,0.0f,1.0f},{0.0f, 0.0f}},
@@ -24,12 +24,12 @@ std::vector<Vertex> quadVertices3D = { // vertex attributes for a quad that fill
 	{{1.0f,  1.0f, 0.0f},{0.0f,0.0f,1.0f}, {1.0f, 1.0f}}
 };
 
-std::vector<unsigned int> quadIndices3D = {
+inline std::vector<unsigned int> quadIndices3D = {
 	0,1,2,
 	0,2,3,
 };
 
-float quadVerticesNoTexCoords[] = { 
+inline float quadVerticesNoTexCoords[] = {
 	// positions  
 	-1.0f,  1.0f, 
 	-1.0f, -1.0f,

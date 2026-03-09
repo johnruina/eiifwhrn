@@ -13,11 +13,11 @@
 #include<glm/gtc/type_ptr.hpp>
 #include "Structures.h"
 
-class t_package {
+class t {
 
 public:
 
-	t_package() {
+	t() {
 		pos = glm::vec3(0.0f);
 		scale = glm::vec3(1.0f);
 		orient = glm::quat();
@@ -43,17 +43,18 @@ public:
 		};
 
 		glm::vec3 min(FLT_MAX);
-		glm::vec3 max(FLT_MIN);
+		glm::vec3 max(-FLT_MAX);
 		for (glm::vec3& corner : corners) {
 			corner *= scale;
 			corner = orient * corner;
 			corner += pos;
-			min = { std::min(min.x, corner.x) ,std::min(min.y, corner.y), std::min(min.z, corner.z) };
-			max = { std::max(max.x, corner.x) ,std::max(max.y, corner.y), std::max(max.z, corner.z) };
+			min = { glm::min(min.x, corner.x) ,glm::min(min.y, corner.y), glm::min(min.z, corner.z) };
+			max = { glm::max(max.x, corner.x) ,glm::max(max.y, corner.y), glm::max(max.z, corner.z) };
 		}
 		BoundingBox tr;
 		tr.min = min;
 		tr.max = max;
+		//std::cout << tr.min.x << ' ' << tr.min.y << ' ' << tr.min.z << ' ' << tr.max.x << ' ' << tr.max.y << ' ' << tr.max.z << '\n';
 		return tr;
 	}
 
@@ -74,7 +75,7 @@ public:
 		};
 
 		float min = FLT_MAX;
-		float max = FLT_MIN;
+		float max = -FLT_MAX;
 		bool init = false;
 		for (glm::vec3& corner : corners) {
 			corner *= scale;
@@ -180,7 +181,7 @@ public:
 		return pos;
 	};
 
-	void CopyMatrixTo(t_package& target) const noexcept {
+	void CopyMatrixTo(t& target) const noexcept {
 
 		target.scale = scale;
 		target.orient = orient;
@@ -221,6 +222,11 @@ private:
 	glm::vec3 pos;
 	glm::vec3 scale;
 	glm::quat orient;
+};
+
+class t_package {
+public:
+	t t;
 };
 
 #endif

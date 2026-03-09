@@ -15,9 +15,9 @@
 #include<glm/gtc/type_ptr.hpp>
 
 //#include "Debug.h"
-
-
-
+#include "common.h"
+#include "Engine.h"
+#include "Camera.h"
 #include "t.h"
 #include "tFunctions.h"
 
@@ -27,35 +27,21 @@ enum ColliderType {
 };
 
 
-class p_package {
+class p {
 friend class Physics;
 
 public:
-	t_package* t;
+	t_package* pointer = nullptr;
 
-	p_package() {
-		t = nullptr;
-		linearvelocity = glm::vec3(0.0f);
-		force = glm::vec3(0.0f);
-
-		velocity = true;
-		collision = true;
+	p() {
+		pointer = nullptr;
+		std::cout << "PHYSICS OBJECT INITIALIZED WITHOUT POINTER IN CONSTRUCTOR!!!\n";
+		//thisisprettybad
+		//dont use it if you dont gotta
 	};
-	
-	p_package(t_package* nt) {
-		t = nullptr;
-		if (nt == nullptr) {
-			std::cout << "nullptr recieved in p package initalizer\n";
-		}
-		else {
-			t = nt;
-		}
-		mass = 1.0f;
-		linearvelocity = glm::vec3(0.0f);
-		force = glm::vec3(0.0f);
 
-		velocity = true;
-		collision = true;
+	p(t_package* t) {
+		pointer = t;
 	};
 
 	void SetLinearVelocity(glm::vec3 nf) {
@@ -88,8 +74,8 @@ public:
 
 
 public:
-	bool collision;
-	bool velocity;
+	bool collision = true;
+	bool velocity = true;
 
 	float restitution = 1.0f;
 
@@ -103,17 +89,17 @@ public:
 struct Collision {
 	glm::vec3 POI; // point of intersection
 	glm::vec3 CN; // COLLISION NORMAL
-	p_package* ObjA;
-	p_package* ObjB;
+	p* ObjA;
+	p* ObjB;
 
-	Collision(p_package* a, p_package* b) : ObjA(a), ObjB(b) {
+	Collision(p* a, p* b) : ObjA(a), ObjB(b) {
 
 	};
 };
 
 class Physics  {
 private:
-	std::vector<p_package*> objects;
+	std::vector<p*> objects;
 	glm::vec3 gravity = glm::vec3(0, -9.81f, 0);
 public:
 
@@ -125,26 +111,43 @@ public:
 		return objects.size();
 	}
 
-	void AddObject(p_package* p) {
+	void AddObject(p* p) {
 		objects.push_back(p);
 	}
 
-	void RemoveObject(p_package* p) {
+	p* PPointerOfObject(t_package* pointer) const {
+		for (p* p : objects) {
+			if (p->pointer == pointer) return p;
+		}
+		return nullptr;
+	}
+
+	void RemoveP(p* p) {
+		//DEPRECATED
 		objects.erase(std::find(objects.begin(), objects.end(), p));
 	}
 
+	void RemoveObject(t_package* pointer) {
+		for (int i = 0; i < objects.size(); i++) {
+			if (objects[i]->pointer == pointer) {
+				delete objects[i];
+				objects.erase(objects.begin() + i);
+				return;
+			}
+		}
+	}
+
 	void Step(float dt) {
-		for (p_package* p : objects) {
+		for (p* p : objects) {
 			if (p->velocity == true) {
 				p->force += p->mass * gravity;
 				p->linearvelocity += p->force / p->mass * dt;
 
-				p->t->TranslateBy(p->linearvelocity * dt);
-				p->t->RotateByQuaternion(glm::quat( p->angularvelocity * dt));
+				p->pointer->t.TranslateBy(p->linearvelocity * dt);
+				p->pointer->t.RotateByQuaternion(glm::quat( p->angularvelocity * dt));
 
 				p->force = glm::vec3(0.0f);
 			}
-
 		}
 		ResolveCollisions(dt);
 	}
@@ -157,14 +160,12 @@ public:
 
 		std::vector<Collision> collisions;
 
-		for (p_package* a : objects) {
+		for (p* a : objects) {
 			if (a->collision == false or a->velocity == false) continue;
-			for (p_package* b : objects) {
-
+			for (p* b : objects) {
 				if ((a == b) or (b->collision == false) or (not a->velocity and not b->velocity)) continue;
-
-				if (TNearT(*a->t, *b->t) and BoundingBoxInBoundingBox(a->t->GetAABB(), b->t->GetAABB())) {
-					std::optional<TInTInfo> e = TInT(*a->t, *b->t);
+				if (TNearT(a->pointer->t, b->pointer->t) and BoundingBoxInBoundingBox(a->pointer->t.GetAABB(), b->pointer->t.GetAABB())) {
+					std::optional<TInTInfo> e = TInT(a->pointer->t, b->pointer->t);
 					if (e.has_value()) {
 						Collision tp(a,b);
 						tp.POI = e.value().POI;
@@ -181,17 +182,17 @@ public:
 
 	void Resolve(Collision* c) {
 
-		p_package* a = c->ObjA;
-		p_package* b = c->ObjB;
+		p* a = c->ObjA;
+		p* b = c->ObjB;
 
-		glm::vec3 ascale = a->t->GetScale();
-		glm::vec3 bscale = b->t->GetScale();
+		glm::vec3 ascale = a->pointer->t.GetScale();
+		glm::vec3 bscale = b->pointer->t.GetScale();
 
 		glm::vec3 relativevelocity = a->linearvelocity - b->linearvelocity;
 		glm::vec3 collisionnormal = c->CN;
 
-		glm::vec3 relativecola = c->POI - a->t->GetTranslation();
-		glm::vec3 relativecolb = c->POI - b->t->GetTranslation();
+		glm::vec3 relativecola = c->POI - a->pointer->t.GetTranslation();
+		glm::vec3 relativecolb = c->POI - b->pointer->t.GetTranslation();
 
 		constexpr float onedividedbytwelve = 0.08333333333f;
 
@@ -222,12 +223,12 @@ public:
 		glm::vec3 frictionvector = glm::cross(glm::cross(collisionnormal,relativevelocity),collisionnormal);
 
 		if (a->velocity) {
-			a->linearvelocity +=inversemass1 * impulse * (collisionnormal+frictionfactor*frictionvector);
+			a->linearvelocity +=inversemass1 * impulse * (collisionnormal+frictionfactor*frictionvector) * 4.0f;
 			a->angularvelocity +=inverseinertiatensora * impulse * (glm::cross(relativecola, (collisionnormal + frictionfactor * frictionvector)))/4.0f;
 		}
 
 		if (b->velocity) {
-			b->linearvelocity -= inversemass2 * impulse * (collisionnormal + frictionfactor * frictionvector);
+			b->linearvelocity -= inversemass2 * impulse * (collisionnormal + frictionfactor * frictionvector) * 4.0f;
 			b->angularvelocity -= inverseinertiatensorb * (glm::cross(relativecolb, impulse * (collisionnormal + frictionfactor * frictionvector)))/4.0f;
 		}
 

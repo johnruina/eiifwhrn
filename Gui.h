@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "common.h"
+//#include "Engine.h"
 #include "VAO.h"
 #include "VBO.h"
 #include "QuadVertices.h"
@@ -32,7 +33,6 @@ public:
     float rounding = 0.0f;
 
     Box() {
-        gui = true;
         shadertype = ShaderType::BoxShader;
         boxVBO.GenerateID();
         boxVAO.GenerateID();
@@ -43,16 +43,15 @@ public:
         boxVAO.LinkVBO(boxVBO, 1, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     }
 
-    virtual void Render(Shader& ShaderProgram, int& screenWidth, int& screenHeight) {
+    virtual void Render(Shader& ShaderProgram) override {
         ShaderProgram.Activate();
         //UNIFORMS
-        t2d.Recalculate(screenWidth,screenHeight);
+        t2d.Recalculate(window->width,window->height);
         ShaderProgram.Set4F("Color", { Color,Opacity });
         ShaderProgram.Set2F("normalizedCenterScale", t2d.NormalizedCenterScale);
         ShaderProgram.Set2F("normalizedCenterPos", t2d.NormalizedCenterPos);
         ShaderProgram.Set1F("z", z);
         ShaderProgram.Set1F("rotation", rotation);
-        ShaderProgram.Set2F("screenSize", { screenWidth ,screenHeight });
         ShaderProgram.Set2F("pixelScale", t2d.pixelsize);
         ShaderProgram.Set2F("pixelPos", t2d.pixelposition);
         ShaderProgram.Set1F("rounding", rounding);
@@ -140,16 +139,15 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    virtual void Render(Shader& ShaderProgram, int& screenWidth, int& screenHeight) {
+    virtual void Render(Shader& ShaderProgram) override {
         ShaderProgram.Activate();
         //UNIFORMS
-        t2d.Recalculate(screenWidth, screenHeight);
+        t2d.Recalculate(window->width, window->height);
         ShaderProgram.Set4F("Color", { Color,Opacity });
         ShaderProgram.Set2F("normalizedCenterScale", t2d.NormalizedCenterScale);
         ShaderProgram.Set2F("normalizedCenterPos", t2d.NormalizedCenterPos);
         ShaderProgram.Set1F("z", z);
         ShaderProgram.Set1F("rotation", rotation);
-        ShaderProgram.Set2F("screenSize", { screenWidth ,screenHeight });
         ShaderProgram.Set2F("pixelScale", t2d.pixelsize);
         ShaderProgram.Set2F("pixelPos", t2d.pixelposition);
         ShaderProgram.Set1F("rounding", rounding);
@@ -175,17 +173,16 @@ public:
         shadertype = ShaderType::ImageBoxShader;
     }
 
-    void Render(Shader& ShaderProgram, int& screenWidth, int& screenHeight) override {
+    virtual void Render(Shader& ShaderProgram) override {
         ShaderProgram.Activate();
         //UNIFORMS
 
-        t2d.Recalculate(screenWidth,screenHeight);
+        t2d.Recalculate(window->width,window->height);
         ShaderProgram.Set4F("Color", { Color,Opacity });
         ShaderProgram.Set2F("normalizedCenterScale", t2d.NormalizedCenterScale);
         ShaderProgram.Set2F("normalizedCenterPos", t2d.NormalizedCenterPos);
         ShaderProgram.Set1F("z", z);
         ShaderProgram.Set1F("rotation", rotation);
-        ShaderProgram.Set2F("screenSize", { screenWidth ,screenHeight });
         ShaderProgram.Set2F("pixelScale", t2d.pixelsize);
         ShaderProgram.Set2F("pixelPos", t2d.pixelposition);
         ShaderProgram.Set1F("rounding", rounding);

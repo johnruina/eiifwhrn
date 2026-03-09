@@ -7,6 +7,9 @@
 
 #include<glm/glm.hpp>
 
+#include "common.h"
+#include "Engine.h"
+#include "Object.h"
 #include "Mesh.h"
 #include "QuadVertices.h"
 #include "t.h"
@@ -19,10 +22,8 @@
 #include "Camera.h"
 #include "RenderSystem.h"
 
-class Particle {
+class Particle : public t_package {
 public:
-
-	t_package t;
 
 	Particle() {
 
@@ -42,7 +43,7 @@ public:
 private:
 };
 
-class ParticleEmitter : public Renderable {
+class ParticleEmitter : public Renderable, public t_package, public Object {
 public:
 
 	enum EmitDirection {
@@ -63,9 +64,6 @@ public:
 	glm::vec4 color = {1.0f,1.0f,1.0f,1.0f};
 
 public:
-
-	t_package t;
-	
 	std::vector<Particle*> particles;
 
 	Texture* tex;
@@ -73,10 +71,12 @@ public:
 	Mesh* mesh;
 	
 	ParticleEmitter() {
+		shadertype = ParticleShader;
 		mesh = new Mesh(quadVertices3D, quadIndices3D);
 	}
 
 	ParticleEmitter(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
+		shadertype = ParticleShader;
 		mesh = new Mesh(meshvertices, meshindices);
 	}
 
@@ -123,7 +123,7 @@ public:
 		}
 	}
 
-	void Render(Shader ShaderProgram, Camera& camera) {
+	void Render(Shader& ShaderProgram) override {
 		if (particles.size() <= 0) return;
 		ShaderProgram.Activate();
 
@@ -144,12 +144,12 @@ public:
 			std::map<float, Particle*> sorted;
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
-				sorted[Magnitude2(camera.t.GetTranslation() - particles[i]->t.GetTranslation())] = particles[i];
+				sorted[Magnitude2(engine->camera->t.GetTranslation() - particles[i]->t.GetTranslation())] = particles[i];
 			}
 			for (std::map<float, Particle*>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
 			{
 				if (facecamera) {
-					matrices.emplace_back(it->second->t.GetTranslationMatrix() * camera.t.GetRotationMatrix() * it->second->t.GetScaleMatrix());
+					matrices.emplace_back(it->second->t.GetTranslationMatrix() * engine->camera->t.GetRotationMatrix() * it->second->t.GetScaleMatrix());
 				}
 				else {
 					matrices.emplace_back(it->second->t.GetMatrix());
@@ -160,7 +160,7 @@ public:
 			for (int i = 0; i < particles.size(); i++)
 			{
 				if (facecamera) {
-					matrices.emplace_back(particles[i]->t.GetTranslationMatrix() * camera.t.GetRotationMatrix() * particles[i]->t.GetScaleMatrix());
+					matrices.emplace_back(particles[i]->t.GetTranslationMatrix() * engine->camera->t.GetRotationMatrix() * particles[i]->t.GetScaleMatrix());
 				}
 				else {
 					matrices.emplace_back(particles[i]->t.GetMatrix());

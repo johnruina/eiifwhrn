@@ -1,5 +1,5 @@
-#ifndef SOUND_CLASS
-#define SOUND_CLASS
+#ifndef SOUND_SYSTEM_CLASS
+#define SOUND_SYSTEM_CLASS
 
 #include <Windows.h>
 #include <wrl.h>
@@ -7,9 +7,19 @@
 #include <x3daudio.h>
 #include <vector>
 
+#pragma comment(lib, "Xaudio2.lib")
+
 namespace wrl = Microsoft::WRL;
 
+struct SoundData {
+	BYTE* data;
+	UINT32 size;
+	WAVEFORMATEXTENSIBLE format;
+};
 
+HRESULT GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition);
+HRESULT ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset);
+SoundData* LoadFileToSoundData(LPCWSTR name);
 
 class SoundSystem {
 public:
@@ -17,33 +27,19 @@ public:
 	SoundSystem();
 	~SoundSystem();
 	void PlayAudio(LPCWSTR filename);
-
-	struct AudioData {
-		BYTE* data;
-		UINT32 size;
-		WAVEFORMATEXTENSIBLE format;
-	};
-
-	struct AudioObject {
-		IXAudio2SourceVoice* sourcevoice;
-		unsigned short int id;
-	};
-
-	AudioData LoadAudioData(LPCWSTR name);
+	bool Recalculate(X3DAUDIO_EMITTER emitter, IXAudio2SourceVoice* sourceVoice);	
 private:
 	//pfuncs
-	HRESULT GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition);
-	HRESULT ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset);
-private:
-	X3DAUDIO_LISTENER Listener = {};
-
-	X3DAUDIO_DSP_SETTINGS DSPSettings = {};
+public:
+	IXAudio2* xaudio2;
+	IXAudio2MasteringVoice* masteringvoice;
 
 	//pvariables
 	X3DAUDIO_HANDLE X3DInstance;
-	wrl::ComPtr<IXAudio2> xaudio2{};
-	IXAudio2MasteringVoice* xaudio2masteringvoice;
-	AudioObject sources[16] = {};
+	X3DAUDIO_LISTENER listener = {};
+	float* matrixCoefficients;
+	XAUDIO2_VOICE_DETAILS deviceDetails;
+	X3DAUDIO_DSP_SETTINGS DSPSettings = {};
 };
 
 #endif

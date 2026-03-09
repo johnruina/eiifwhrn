@@ -64,7 +64,7 @@ std::optional<glm::vec3> RayIntersectsTriangle(const Ray& ray,
 		return {};
 }
 
-std::optional<glm::vec3> IsRayInT(const Ray& ray, t_package t) {
+std::optional<glm::vec3> IsRayInT(const Ray& ray, t t) {
 	const BoundingBox aabb = t.GetRotationlessAABB();
 	glm::mat4 inverse = glm::inverse(t.GetMatrix());
 	glm::vec3 ray_origin = glm::vec3(inverse * glm::vec4(ray.origin, 1.0f));
@@ -120,9 +120,9 @@ std::optional<std::pair<float,glm::vec3>> TAxisCollidesT(std::vector < glm::vec3
 	//FIRST RETURN IS OVERLAPPING AREA
 	//SECOND RETURN IS POINT OF COLLISION
 	float min1 = FLT_MAX;
-	float max1 = FLT_MIN;
+	float max1 = -FLT_MAX;
 	float min2 = FLT_MAX;
-	float max2 = FLT_MIN;
+	float max2 = -FLT_MAX;
 
 	for (glm::vec3& v : t1) {
 		float perpendicularmag = SquaredPerpendicularMagnitude(v,axis);
@@ -146,9 +146,9 @@ bool TAxisCollidesTNoInfo(std::vector < glm::vec3 >& t1, std::vector < glm::vec3
 	//FIRST RETURN IS OVERLAPPING AREA
 	//SECOND RETURN IS POINT OF COLLISION
 	float min1 = FLT_MAX;
-	float max1 = FLT_MIN;
+	float max1 = -FLT_MAX;
 	float min2 = FLT_MAX;
-	float max2 = FLT_MIN;
+	float max2 = -FLT_MAX;
 
 	for (glm::vec3& v : t1) {
 		float perpendicularmag = SquaredPerpendicularMagnitude(v, axis);
@@ -171,9 +171,9 @@ std::optional<AxisCollisionCN> TAxisCollidesTCN(std::vector < glm::vec3 >& t1, s
 	//FIRST RETURN IS OVERLAPPING AREA
 	//SECOND RETURN IS POINT OF COLLISION
 	float min1 = FLT_MAX;
-	float max1 = FLT_MIN;
+	float max1 = -FLT_MAX;
 	float min2 = FLT_MAX;
-	float max2 = FLT_MIN;
+	float max2 = -FLT_MAX;
 
 	for (glm::vec3& v : t1) {
 		float perpendicularmag = SquaredPerpendicularMagnitude(v, axis);
@@ -200,13 +200,13 @@ std::optional<AxisCollisionCN> TAxisCollidesTCN(std::vector < glm::vec3 >& t1, s
 	return {};
 }
 
-bool TNearT(t_package& t1, t_package& t2)
+bool TNearT(t& t1, t& t2)
 {
 	glm::vec3 posdif = t1.GetTranslation() - t2.GetTranslation();
 	return t1.ScaleMagnitude2() + t2.ScaleMagnitude2() > (posdif.x* posdif.x+ posdif.y* posdif.y+ posdif.z* posdif.z) * 2.0f;
 }
 
-bool TInTNoInfo(t_package& t1, t_package& t2) {
+bool TInTNoInfo(t& t1, t& t2) {
 	std::vector < glm::vec3 > worldvertices1 = {
 	{0.5f,0.5f,0.5f},
 	{0.5f,-0.5f,0.5f},
@@ -250,7 +250,7 @@ bool TInTNoInfo(t_package& t1, t_package& t2) {
 
 	std::vector<glm::vec3> axes = {
 		fv1,fv2,uv1,uv2,rv1,rv2,
-		glm::cross(fv1,fv2),
+		glm::cross(fv1,fv2),	
 		glm::cross(fv1, rv2),
 		glm::cross(fv1, uv2),
 		glm::cross(rv1, fv2),
@@ -269,7 +269,7 @@ bool TInTNoInfo(t_package& t1, t_package& t2) {
 	return true;
 }
 
-std::optional<TInTInfo> TInT(t_package& t1, t_package& t2) {
+std::optional<TInTInfo> TInT(t& t1, t& t2) {
 
 	//FIRST IS POI, SECOND IS COLNORMAL
 

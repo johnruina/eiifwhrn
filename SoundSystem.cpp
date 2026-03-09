@@ -1,5 +1,6 @@
 
 #include "SoundSystem.h"
+#include <iostream>
 
 #define audio_throw_failed(hrcall) if (FAILED(hrcall)) throw;
 
@@ -12,35 +13,101 @@
 
 SoundSystem::SoundSystem()
 {
-    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    audio_throw_failed(::XAudio2Create(&xaudio2, 0, XAUDIO2_DEFAULT_PROCESSOR));
+    xaudio2 = 0;
+    masteringvoice = 0;
+    matrixCoefficients = 0;
 
-    audio_throw_failed(xaudio2->CreateMasteringVoice(&xaudio2masteringvoice,
+    HRESULT result;
+    DWORD dwChannelMask;
+
+
+    // Initialize COM first.
+    result = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (FAILED(result))
+    {
+        std::cout << "SOMETHING FUMBLED IN THE SOUNDSYSTEM CREATION1\m";
+    }
+
+    // Create an instance of the XAudio2 engine.
+    result = XAudio2Create(&xaudio2, 0, XAUDIO2_USE_DEFAULT_PROCESSOR);
+    if (FAILED(result))
+    {
+        std::cout << "SOMETHING FUMBLED IN THE SOUNDSYSTEM CREATION2\m";
+    }
+
+    // Create the mastering voice.
+    result = xaudio2->CreateMasteringVoice(&masteringvoice,
         XAUDIO2_DEFAULT_CHANNELS,
         XAUDIO2_DEFAULT_SAMPLERATE,
         0,
         NULL,
         NULL,
-        AudioCategory_GameEffects));
+        AudioCategory_GameEffects);
+    if (FAILED(result))
+    {
+        std::cout << "SOMETHING FUMBLED IN THE SOUNDSYSTEM CREATION3\m";
+    }
+    
+    // Get the speaker setup for 3D audio settings.
+    masteringvoice->GetChannelMask(&dwChannelMask);
 
-    WORD bitspersample = 16;
-    DWORD samplespersec = 44100;
+    // Initialize X3DAudio.
+    result = X3DAudioInitialize(dwChannelMask, X3DAUDIO_SPEED_OF_SOUND, X3DInstance);
+    if (FAILED(result))
+    {
+        std::cout << "SOMETHING FUMBLED IN THE SOUNDSYSTEM CREATION4\m";
+    }
+    
+    ZeroMemory(&listener, sizeof(&listener));
 
-    WAVEFORMATEX waveformatex{};
-    waveformatex.wFormatTag = WAVE_FORMAT_PCM;
-    waveformatex.nChannels = 1; // 1 channel
-    waveformatex.nSamplesPerSec = samplespersec;
-    waveformatex.nBlockAlign = waveformatex.nChannels * bitspersample / 8;
-    waveformatex.nAvgBytesPerSec = waveformatex.nSamplesPerSec * waveformatex.nBlockAlign;
-    waveformatex.wBitsPerSample = bitspersample;
-    waveformatex.cbSize = 0;      
-    /*
-    DWORD dwChannelMask;
-    xaudio2masteringvoice->GetChannelMask(&dwChannelMask);
+    listener.Position.x = 0.0f;
+    listener.Position.y = 0.0f;
+    listener.Position.z = 0.0f;
 
-    X3DAudioInitialize(dwChannelMask, X3DAUDIO_SPEED_OF_SOUND, X3DInstance);
-    */
+    listener.OrientFront.x = 0.0f;
+    listener.OrientFront.y = 0.0f;
+    listener.OrientFront.z = 1.0f;
 
+    listener.OrientTop.x = 0.0f;
+    listener.OrientTop.y = 1.0f;
+    listener.OrientTop.z = 0.0f;
+
+    masteringvoice->GetVoiceDetails(&deviceDetails);
+
+    // Create the matrix coefficients array for the DSP struct.
+    matrixCoefficients = new float[deviceDetails.InputChannels];
+
+    // Create an instance of the dsp settings structure.
+    ZeroMemory(&DSPSettings, sizeof(&DSPSettings));
+
+    DSPSettings.SrcChannelCount = 1;
+    DSPSettings.DstChannelCount = deviceDetails.InputChannels;
+    DSPSettings.pMatrixCoefficients = matrixCoefficients;
+
+}
+
+bool SoundSystem::Recalculate(X3DAUDIO_EMITTER emitter, IXAudio2SourceVoice* sourceVoice)
+{
+    HRESULT result;
+
+
+    // Call X3DAudioCalculate to calculate new settings for the voices.
+    X3DAudioCalculate(X3DInstance, &listener, &emitter, X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT | X3DAUDIO_CALCULATE_REVERB, &DSPSettings);
+
+    // Use SetOutputMatrix and SetFrequencyRatio to apply the volume and pitch values to the source voice.
+    result = sourceVoice->SetOutputMatrix(masteringvoice, 1, deviceDetails.InputChannels, DSPSettings.pMatrixCoefficients);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    result = sourceVoice->SetFrequencyRatio(DSPSettings.DopplerFactor);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 SoundSystem::~SoundSystem() {
@@ -57,9 +124,10 @@ SoundSystem::~SoundSystem() {
 
 void SoundSystem::PlayAudio(LPCWSTR filename)
 {
-    AudioData audiodata = LoadAudioData(filename);
+    //SUPER DEPRECATED
+    SoundData* audiodata = LoadFileToSoundData(filename);
 
-    if (!audiodata.data) throw;
+    if (!audiodata->data) throw;
 
     XAUDIO2_BUFFER buffer = { 0 };
 
@@ -68,19 +136,19 @@ void SoundSystem::PlayAudio(LPCWSTR filename)
     buffer.LoopBegin = 0;
     buffer.LoopCount = 0;
     buffer.LoopLength = 0;
-    buffer.AudioBytes = audiodata.size;  //size of the audio buffer in bytes
-    buffer.pAudioData = audiodata.data;  //buffer containing audio data
+    buffer.AudioBytes = audiodata->size;  //size of the audio buffer in bytes
+    buffer.pAudioData = audiodata->data;  //buffer containing audio data
     buffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
     
     IXAudio2SourceVoice* xaudio2sourcevoice;
-    audio_throw_failed(xaudio2->CreateSourceVoice(&xaudio2sourcevoice, (WAVEFORMATEX*)&audiodata.format));
+    audio_throw_failed(xaudio2->CreateSourceVoice(&xaudio2sourcevoice, (WAVEFORMATEX*)&audiodata->format));
     audio_throw_failed(xaudio2sourcevoice->SubmitSourceBuffer(&buffer));
     audio_throw_failed(xaudio2sourcevoice->Start(0));
 }
 
-SoundSystem::AudioData SoundSystem::LoadAudioData(LPCWSTR filename)
+SoundData* LoadFileToSoundData(LPCWSTR filename)
 {
-    AudioData result = {};
+    SoundData* result = new SoundData();
 
     HANDLE file = CreateFileW(filename,
         GENERIC_READ,
@@ -108,7 +176,7 @@ SoundSystem::AudioData SoundSystem::LoadAudioData(LPCWSTR filename)
     }
 
     GetChunk(file, fourccFMT, dwChunkSize, dwChunkPosition);
-    ReadChunkData(file, &result.format, dwChunkSize, dwChunkPosition);
+    ReadChunkData(file, &result->format, dwChunkSize, dwChunkPosition);
 
     GetChunk(file, fourccDATA, dwChunkSize, dwChunkPosition);
     BYTE* pDataBuffer = new BYTE[dwChunkSize];
@@ -116,16 +184,14 @@ SoundSystem::AudioData SoundSystem::LoadAudioData(LPCWSTR filename)
     ReadChunkData(file, pDataBuffer, dwChunkSize, dwChunkPosition);
 
     CloseHandle(file);
-
-    result.size = dwChunkSize;
-    result.data = pDataBuffer;
-
+    result->size = dwChunkSize;
+    result->data = pDataBuffer;
     return result;
 }
 
 //shenanigans i dont want to touch
 
-HRESULT SoundSystem::GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition) {
+HRESULT GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition) {
     HRESULT hr = S_OK;
     if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, 0, NULL, FILE_BEGIN))
         return HRESULT_FROM_WIN32(GetLastError());
@@ -178,7 +244,7 @@ HRESULT SoundSystem::GetChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DW
     return S_OK;
 }
 
-HRESULT SoundSystem::ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset) {
+HRESULT ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset) {
     HRESULT hr = S_OK;
     if (INVALID_SET_FILE_POINTER == SetFilePointer(hFile, bufferoffset, NULL, FILE_BEGIN))
         return HRESULT_FROM_WIN32(GetLastError());

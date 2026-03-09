@@ -77,7 +77,10 @@
 #include "common.h"
 #include "Engine.h"
 #include "Window.h"
-
+#include "Mouse.h"
+#include "Keyboard.h"
+#include "SoundSystem.h"
+#include "ResourceManager.h"
 
 int main() {
     glfwInit();
@@ -88,12 +91,21 @@ int main() {
     glfwWindowHint(GLFW_SAMPLES, 4);
 
     //WINDOW INITIALIZATION
-    window = new Window(1280,720,"EIIFWHRN");
-    gladLoadGL();
-    engine = new Engine();
-    
-    engine->Initiate();
+    mouse = new Mouse();
+    keyboard = new Keyboard();
 
+    window = new Window(1280,720,"EIIFWHRN");
+    soundsystem = new SoundSystem();
+    resourcemanager = new ResourceManager();
+
+    gladLoadGL();
+    Engine* enginee = new Engine();
+    engine->Initiate();
+    
+    std::cout << "engine stopped\n";
+    delete window;
+    delete mouse;
+    delete keyboard;
     glfwTerminate();
     return 0;
 }
