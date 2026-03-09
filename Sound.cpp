@@ -15,7 +15,6 @@ X3DAUDIO_EMITTER Sound::GetEmitter()
 bool Sound::PlayTrack()
 {
     HRESULT result;
-
     // Play the track.
     result = m_sourceVoice->Start(0, XAUDIO2_COMMIT_NOW);
     if (FAILED(result))
@@ -58,6 +57,9 @@ bool Sound::StopTrack()
 
 void Sound::Update3DPosition(float x, float y, float z)
 {
+    m_emitter.Position.x = x;
+    m_emitter.Position.y = y;
+    m_emitter.Position.z = z;
 }
 
 void Sound::InitializeEmitter()
@@ -65,24 +67,22 @@ void Sound::InitializeEmitter()
     ZeroMemory(&m_emitter, sizeof(&m_emitter));
 
     m_emitter.ChannelCount = 1;
-    m_emitter.CurveDistanceScaler = 1.0f;
+    m_emitter.CurveDistanceScaler = 4.0f;
     m_emitter.DopplerScaler = 1.0f;
-
     // Set an initial position for the sound.
     m_emitter.Position.x = 0.0f;
     m_emitter.Position.y = 0.0f;
     m_emitter.Position.z = 0.0f;
+    m_emitter.InnerRadius = 0.0f;
 
     return;
 }
 
 void Sound::LoadSoundData(SoundData* s)
 {
-
     if (!s->data) throw;
 
     XAUDIO2_BUFFER buffer = { 0 };
-
     buffer.PlayBegin = 0;
     buffer.PlayLength = 0;
     buffer.LoopBegin = 0;
@@ -94,5 +94,4 @@ void Sound::LoadSoundData(SoundData* s)
 
     soundsystem->xaudio2->CreateSourceVoice(&m_sourceVoice, (WAVEFORMATEX*)&s->format);
     m_sourceVoice->SubmitSourceBuffer(&buffer);
-
 }

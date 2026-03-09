@@ -36,10 +36,10 @@ public:
 
 	//pvariables
 	X3DAUDIO_HANDLE X3DInstance;
-	X3DAUDIO_LISTENER listener = {};
+	X3DAUDIO_LISTENER listener;
 	float* matrixCoefficients;
 	XAUDIO2_VOICE_DETAILS deviceDetails;
-	X3DAUDIO_DSP_SETTINGS DSPSettings = {};
+	X3DAUDIO_DSP_SETTINGS DSPSettings;
 };
 
 #endif

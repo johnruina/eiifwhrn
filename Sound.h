@@ -12,6 +12,17 @@
 class Sound : public Object {
 public:
 
+    Sound() {
+        m_sourceVoice = 0;
+        InitializeEmitter();
+    }
+    ~Sound() {
+        if (m_sourceVoice)
+        {
+            m_sourceVoice->DestroyVoice();
+            m_sourceVoice = 0;
+        }
+    }
     IXAudio2SourceVoice* GetSourceVoice();
     X3DAUDIO_EMITTER GetEmitter();
 

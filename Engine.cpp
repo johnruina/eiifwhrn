@@ -138,9 +138,12 @@ Engine::Engine() {
     mainf->AddChild(rain);
     
     Sound* music = new Sound();
-    music->LoadSoundData(resourcemanager->LoadSoundData(L"Agartha.wav"));
+    music->LoadSoundData(resourcemanager->LoadSoundData(L"fs.wav"));
+    music->Update3DPosition(0.0f,0.0f,0.0f);
     music->PlayTrack();
-    
+    music->name = "music";
+    mainf->AddChild(music);
+
     Box* crosshair = new Box();
     crosshair->Color = { 0.0f,0.0f,0.0f };
     crosshair->t2d.center = { 0.5f,0.5f };
@@ -185,7 +188,7 @@ Engine::Engine() {
     Mesh* cube = CreateCubeMesh();
     cube->t.ScaleTo({ 1.0f,1.0f,1.0f });
     cube->t.TranslateTo({ 5.0f,4.0f,6.5f });
-    cube->name = "cube!!!";
+    cube->name = "cube";
     cube->AddToRenderSystem();
     mainf->AddChild(cube);
 }
@@ -298,7 +301,18 @@ void Engine::Initiate() {
         if (frame % onceeveryframes == 0) {
 
         }
+        
+        soundsystem->listener.Position.x = camera->t.GetTranslation().x;
+        soundsystem->listener.Position.y = camera->t.GetTranslation().y;
+        soundsystem->listener.Position.z = camera->t.GetTranslation().z;
+        soundsystem->listener.OrientFront.x = -camera->t.GetFrontVector().x;
+        soundsystem->listener.OrientFront.y = camera->t.GetFrontVector().y;
+        soundsystem->listener.OrientFront.z = -camera->t.GetFrontVector().z;
 
+        Sound* music = dynamic_cast<Sound*>(mainf->GetFirstChildOfName("music"));
+        Mesh* cube = dynamic_cast<Mesh*>(mainf->GetFirstChildOfName("cube"));
+        music->Update3DPosition(cube->t.GetTranslation().x, cube->t.GetTranslation().y, cube->t.GetTranslation().z);
+        soundsystem->Recalculate(music->GetEmitter(), music->GetSourceVoice());
         physicsengine->Step(deltatime);
 
         ////////////////////////////////////RENDER SCENE////////////////////////////////////

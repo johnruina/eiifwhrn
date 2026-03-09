@@ -18,7 +18,7 @@ SoundSystem::SoundSystem()
     matrixCoefficients = 0;
 
     HRESULT result;
-    DWORD dwChannelMask;
+    DWORD dwChannelMask;    
 
 
     // Initialize COM first.
@@ -36,13 +36,7 @@ SoundSystem::SoundSystem()
     }
 
     // Create the mastering voice.
-    result = xaudio2->CreateMasteringVoice(&masteringvoice,
-        XAUDIO2_DEFAULT_CHANNELS,
-        XAUDIO2_DEFAULT_SAMPLERATE,
-        0,
-        NULL,
-        NULL,
-        AudioCategory_GameEffects);
+    result = xaudio2->CreateMasteringVoice(&masteringvoice);
     if (FAILED(result))
     {
         std::cout << "SOMETHING FUMBLED IN THE SOUNDSYSTEM CREATION3\m";
@@ -73,7 +67,6 @@ SoundSystem::SoundSystem()
     listener.OrientTop.z = 0.0f;
 
     masteringvoice->GetVoiceDetails(&deviceDetails);
-
     // Create the matrix coefficients array for the DSP struct.
     matrixCoefficients = new float[deviceDetails.InputChannels];
 
@@ -83,17 +76,17 @@ SoundSystem::SoundSystem()
     DSPSettings.SrcChannelCount = 1;
     DSPSettings.DstChannelCount = deviceDetails.InputChannels;
     DSPSettings.pMatrixCoefficients = matrixCoefficients;
-
+    
 }
 
 bool SoundSystem::Recalculate(X3DAUDIO_EMITTER emitter, IXAudio2SourceVoice* sourceVoice)
 {
+    
     HRESULT result;
 
-
     // Call X3DAudioCalculate to calculate new settings for the voices.
-    X3DAudioCalculate(X3DInstance, &listener, &emitter, X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT | X3DAUDIO_CALCULATE_REVERB, &DSPSettings);
 
+    X3DAudioCalculate(X3DInstance, &listener, &emitter, X3DAUDIO_CALCULATE_MATRIX | X3DAUDIO_CALCULATE_DOPPLER | X3DAUDIO_CALCULATE_LPF_DIRECT | X3DAUDIO_CALCULATE_REVERB, &DSPSettings);
     // Use SetOutputMatrix and SetFrequencyRatio to apply the volume and pitch values to the source voice.
     result = sourceVoice->SetOutputMatrix(masteringvoice, 1, deviceDetails.InputChannels, DSPSettings.pMatrixCoefficients);
     if (FAILED(result))
@@ -106,11 +99,19 @@ bool SoundSystem::Recalculate(X3DAUDIO_EMITTER emitter, IXAudio2SourceVoice* sou
     {
         return false;
     }
-
+    
     return true;
 }
 
 SoundSystem::~SoundSystem() {
+    if (matrixCoefficients)
+    {
+        delete[] matrixCoefficients;
+        matrixCoefficients = 0;
+    }
+    if (masteringvoice) {
+        masteringvoice->DestroyVoice();
+    }
     if (xaudio2)
     {
         xaudio2->Release();
@@ -120,30 +121,6 @@ SoundSystem::~SoundSystem() {
     CoUninitialize();
 
     return;
-}
-
-void SoundSystem::PlayAudio(LPCWSTR filename)
-{
-    //SUPER DEPRECATED
-    SoundData* audiodata = LoadFileToSoundData(filename);
-
-    if (!audiodata->data) throw;
-
-    XAUDIO2_BUFFER buffer = { 0 };
-
-    buffer.PlayBegin = 0;
-    buffer.PlayLength = 0;
-    buffer.LoopBegin = 0;
-    buffer.LoopCount = 0;
-    buffer.LoopLength = 0;
-    buffer.AudioBytes = audiodata->size;  //size of the audio buffer in bytes
-    buffer.pAudioData = audiodata->data;  //buffer containing audio data
-    buffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
-    
-    IXAudio2SourceVoice* xaudio2sourcevoice;
-    audio_throw_failed(xaudio2->CreateSourceVoice(&xaudio2sourcevoice, (WAVEFORMATEX*)&audiodata->format));
-    audio_throw_failed(xaudio2sourcevoice->SubmitSourceBuffer(&buffer));
-    audio_throw_failed(xaudio2sourcevoice->Start(0));
 }
 
 SoundData* LoadFileToSoundData(LPCWSTR filename)
@@ -178,6 +155,10 @@ SoundData* LoadFileToSoundData(LPCWSTR filename)
     GetChunk(file, fourccFMT, dwChunkSize, dwChunkPosition);
     ReadChunkData(file, &result->format, dwChunkSize, dwChunkPosition);
 
+    if (result->format.Format.nChannels != 1) {
+        std::cout << "NON MONO WAV FILE\n";
+    }
+
     GetChunk(file, fourccDATA, dwChunkSize, dwChunkPosition);
     BYTE* pDataBuffer = new BYTE[dwChunkSize];
 
@@ -185,7 +166,7 @@ SoundData* LoadFileToSoundData(LPCWSTR filename)
 
     CloseHandle(file);
     result->size = dwChunkSize;
-    result->data = pDataBuffer;
+    result->data = pDataBuffer; 
     return result;
 }
 
