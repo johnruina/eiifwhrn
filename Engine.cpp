@@ -128,8 +128,8 @@ Engine::Engine() {
     rain->speed = 30.0f;
     rain->lifespan = 0.4f;
     rain->angularvelocity = { 0.0f,0.0f,glm::radians(10.0f) };
-    rain->size = { 0.02f,0.2f,0.0f };
-    rain->emitangle = { glm::radians(60.0f),glm::radians(360.0f) ,glm::radians(60.0f) };
+    rain->size = { 0.04f,0.4f,0.0f };
+    rain->emitangle = { glm::radians(30.0f),glm::radians(360.0f) ,glm::radians(30.0f) };
     rain->facecamera = false;
     rain->color = { 1.0f,1.0f,1.0f,1.0f };
     rain->emitdirection = ParticleEmitter::EmitDirection::Perpendicular;
@@ -138,7 +138,7 @@ Engine::Engine() {
     mainf->AddChild(rain);
     
     Sound* music = new Sound();
-    music->LoadSoundData(resourcemanager->LoadSoundData(L"fs.wav"));
+    music->LoadSoundData(resourcemanager->LoadSoundData(L"assets/fs.wav"));
     music->Update3DPosition(0.0f,0.0f,0.0f);
     music->PlayTrack();
     music->name = "music";
@@ -160,13 +160,13 @@ Engine::Engine() {
     testgui->rounding = 0.1f;
     testgui->AddToRenderSystem();
 
-    Texture* magic = new Texture("itsmagicbitch.jpg");
+    Texture* magic = new Texture("assets/itsmagicbitch.jpg");
     testgui->tex = magic;
 
     Texture* snowflake = new Texture("assets/snowflake.png");
     rain->tex = snowflake;
     
-    Model leiheng("bullet.obj");
+    Model leiheng("assets/bullet.obj");
     leiheng.t.TranslateTo({ 5.0f,10.0f,0.0f });
     leiheng.t.ScaleTo({ 1.0f,1.0f,1.0f });
     for (Mesh* mesh : leiheng.meshes) {
@@ -177,7 +177,7 @@ Engine::Engine() {
     }
         
     Mesh* floor = CreateCubeMesh();
-    floor->t.ScaleTo({ 10.0f,0.4f,10.0f });
+    floor->t.ScaleTo({ 100.0f,0.4f,100.0f });
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
     floor->name = "floor";
     p* np = new p(floor);
@@ -288,14 +288,12 @@ void Engine::Initiate() {
 
         }
 
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Emit();
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Emit();
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Emit();
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Emit();
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Emit();
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Emit();
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Emit();
-        dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"))->Step(deltatime);
+        ParticleEmitter* rain = dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"));
+        rain->t.TranslateTo(camera->t.GetTranslation() + glm::vec3(0.0f,10.0f,0.0f));
+        for (int i = 0; i < 35; i++) {
+            rain->Emit();
+        }
+        rain->Step(deltatime);
 
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {

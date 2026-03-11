@@ -139,6 +139,7 @@ SoundData* LoadFileToSoundData(LPCWSTR filename)
     DWORD dwChunkPosition;
 
     if (INVALID_HANDLE_VALUE == file) {
+        std::cout << "INVALID HANDLE TO SOUND FILE\n";
         throw;
     }
     if (INVALID_SET_FILE_POINTER == SetFilePointer(file, 0, NULL, FILE_BEGIN)) {

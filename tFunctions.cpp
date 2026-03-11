@@ -1,4 +1,5 @@
 #include "tFunctions.h"
+#include "Debug.h"
 
 glm::vec3 CalculateTriangleNormal(Triangle t) {
 	return glm::normalize(glm::cross(t.b - t.a, t.c - t.a));
@@ -316,7 +317,7 @@ std::optional<TInTInfo> TInT(t& t1, t& t2) {
 
 	glm::vec3 poi = {0.0f,0.0f,0.0f};
 	float lowestoverlap = FLT_MAX;
-
+	/**/
 	glm::vec3 cn = { 0.0f,0.0f,0.0f };
 	float cnlowestoverlap = FLT_MAX;
 

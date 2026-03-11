@@ -140,16 +140,23 @@ public:
 	void Step(float dt) {
 		for (p* p : objects) {
 			if (p->velocity == true) {
-				p->force += p->mass * gravity;
+				p->force += p->mass * gravity
+					//+ -p->linearvelocity/2.0f
+					;
+				//p->angularvelocity += -(p->angularvelocity / 2.0f)/p->mass*dt;
 				p->linearvelocity += p->force / p->mass * dt;
+			}
+		}
+		ResolveCollisions(dt);
 
+		for (p* p : objects) {
+			if (p->velocity == true) {
 				p->pointer->t.TranslateBy(p->linearvelocity * dt);
-				p->pointer->t.RotateByQuaternion(glm::quat( p->angularvelocity * dt));
+				p->pointer->t.RotateByQuaternion(glm::quat(p->angularvelocity * dt));
 
 				p->force = glm::vec3(0.0f);
 			}
 		}
-		ResolveCollisions(dt);
 	}
 	void SolveCollisions(std::vector<Collision> collisions,float dt) {
 		for (Collision collision : collisions) {
@@ -159,7 +166,7 @@ public:
 	void ResolveCollisions(float dt) {
 
 		std::vector<Collision> collisions;
-
+		
 		for (p* a : objects) {
 			if (a->collision == false or a->velocity == false) continue;
 			for (p* b : objects) {
@@ -180,59 +187,7 @@ public:
 
 	}
 
-	void Resolve(Collision* c) {
-
-		p* a = c->ObjA;
-		p* b = c->ObjB;
-
-		glm::vec3 ascale = a->pointer->t.GetScale();
-		glm::vec3 bscale = b->pointer->t.GetScale();
-
-		glm::vec3 relativevelocity = a->linearvelocity - b->linearvelocity;
-		glm::vec3 collisionnormal = c->CN;
-
-		glm::vec3 relativecola = c->POI - a->pointer->t.GetTranslation();
-		glm::vec3 relativecolb = c->POI - b->pointer->t.GetTranslation();
-
-		constexpr float onedividedbytwelve = 0.08333333333f;
-
-		glm::mat3 inverseinertiatensora(
-			onedividedbytwelve * a->mass * (ascale.y * ascale.y + ascale.z * ascale.z),0.0f,0.0f,
-			0.0f, onedividedbytwelve * a->mass * (ascale.x * ascale.x + ascale.z * ascale.z),0.0f,
-			0.0f,0.0f, onedividedbytwelve * a->mass * (ascale.x * ascale.x + ascale.y * ascale.y)
-		);
-
-
-		glm::mat3 inverseinertiatensorb(
-			onedividedbytwelve * b->mass * (bscale.y * bscale.y + bscale.z * bscale.z), 0.0f, 0.0f,
-			0.0f, onedividedbytwelve * b->mass * (bscale.x * bscale.x + bscale.z * bscale.z), 0.0f,
-			0.0f, 0.0f, onedividedbytwelve * b->mass * (bscale.x * bscale.x + bscale.y * bscale.y)
-		);
-
-		inverseinertiatensora = glm::inverse(inverseinertiatensora);
-		inverseinertiatensorb = glm::inverse(inverseinertiatensorb);
-
-		float inversemass1 = 1.0f / a->GetMass();
-		float inversemass2 = 1.0f / b->GetMass();
-
-		float totalvelocity = glm::dot( - 1 * (1 + a->restitution * b->restitution) * relativevelocity,collisionnormal);
-		//foolish human, i laced yo shit
-		float impulse = totalvelocity /( glm::dot(collisionnormal,collisionnormal*(inversemass1 + inversemass2)) + glm::dot( glm::cross(inverseinertiatensora * glm::cross(relativecola,collisionnormal),relativecola) + glm::cross(inverseinertiatensorb * glm::cross(relativecolb, collisionnormal), relativecolb), collisionnormal));
-
-		float frictionfactor = 0.5f;
-		glm::vec3 frictionvector = glm::cross(glm::cross(collisionnormal,relativevelocity),collisionnormal);
-
-		if (a->velocity) {
-			a->linearvelocity +=inversemass1 * impulse * (collisionnormal+frictionfactor*frictionvector) * 4.0f;
-			a->angularvelocity +=inverseinertiatensora * impulse * (glm::cross(relativecola, (collisionnormal + frictionfactor * frictionvector)))/4.0f;
-		}
-
-		if (b->velocity) {
-			b->linearvelocity -= inversemass2 * impulse * (collisionnormal + frictionfactor * frictionvector) * 4.0f;
-			b->angularvelocity -= inverseinertiatensorb * (glm::cross(relativecolb, impulse * (collisionnormal + frictionfactor * frictionvector)))/4.0f;
-		}
-
-	}
+	void Resolve(Collision* c);
 
 };
 

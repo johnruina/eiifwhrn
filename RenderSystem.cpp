@@ -113,7 +113,7 @@ void RenderSystem::Render(Camera& camera)
 	MeshShader->Set3F("dirLight.ambient", glm::vec3(0.5f));
 	MeshShader->Set3F("dirLight.diffuse", glm::vec3(0.5f));
 	MeshShader->Set3F("dirLight.specular", glm::vec3(0.5f));
-	MeshShader->Set3F("dirLight.direction", glm::vec3(0.0f, -1.0f, 1.0f));
+	MeshShader->Set3F("dirLight.direction", glm::normalize(glm::vec3(5.0f,5.0f,5.0f)));
 
 	for (Renderable* r : renderables) {
 		//render opaque meshes and sort the non opaques in this loop
