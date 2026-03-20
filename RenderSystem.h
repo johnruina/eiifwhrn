@@ -83,7 +83,9 @@ public:
 
 	//FRAMEBUFFER STUFF
 	//FRAMEBUFFER
-	FBO* framebuffer;
+	FBO* screenfbo;
+	FBO* shadowdepthmapfbo;
+	unsigned int depthMaptexture;
 	unsigned int textureColorbuffer;
 	unsigned int rbo;
 
@@ -92,7 +94,8 @@ public:
 
 	VAO* skyboxVAO;
 	VBO* skyboxVBO;
-
+	
+	Shader* ShadowShader;
 	Shader* SkyboxShader;
 	Shader* ScreenShader;
 
@@ -136,7 +139,7 @@ public:
 
 	void RenderRenderable(Renderable* renderable, Camera& camera);
 	void Render(Camera& camera);
-
+	
 private:
 
 	void PrepareMeshShader(Camera& camera);
@@ -146,7 +149,7 @@ private:
 	void PrepareBoxShader(Camera& camera);
 
 	void PrepareImageBoxShader(Camera& camera);
-
+public:
 	std::vector<Renderable*> renderables;
 	
 };

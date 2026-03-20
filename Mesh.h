@@ -25,24 +25,20 @@
 #include "tFunctions.h"
 #include "Vertex.h"
 #include "texture.h"
+#include "MeshData.h"
 
 struct IntersectionData {
 	glm::vec3 intersection;
 	int face;
 };
 
-class Mesh : public Object , public Renderable, public t_package {
+class Mesh : public Object , public Renderable, public t_package , public MeshData {
 	friend class Model;
 protected:
 public:
-	std::vector<Vertex> vertices;
-	std::vector<GLuint> indices;
-	std::vector<Texture> textures;
 	VAO vao;
 	VBO vbo;
 	EBO ebo;
-
-	//DO NOT MAKE A MESH WITH A ZERO IN SCALE PRETTY PLEASE OR ELSE ITLL FRY A BUNCHA MATH AND FEATURES
 
 	Mesh() {
 

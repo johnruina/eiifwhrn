@@ -27,6 +27,7 @@ void mouse_callback(GLFWwindow* windowe, double xposIn, double yposIn);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 class Physics;
+class Lighting;
 class RenderSystem;
 class SoundSystem;
 class Folder;
@@ -38,6 +39,7 @@ public:
 
 public:
     //SYSTEMS
+    Lighting* lighting;
     Physics* physicsengine;
     RenderSystem* rendersystem;
 public:

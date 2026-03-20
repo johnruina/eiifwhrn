@@ -141,6 +141,7 @@ std::optional<std::pair<float,glm::vec3>> TAxisCollidesT(std::vector < glm::vec3
 		float middle = (glm::min(max1, max2) + glm::max(min1, min2)) / 2.0f;
 		return { {overlap, middle * axis} };
 	}
+	else return {};
 }
 
 bool TAxisCollidesTNoInfo(std::vector < glm::vec3 >& t1, std::vector < glm::vec3 >& t2, glm::vec3 axis) {
@@ -315,28 +316,27 @@ std::optional<TInTInfo> TInT(t& t1, t& t2) {
 	glm::vec3 rv2 = t2.GetRightVector();
 	glm::vec3 uv2 = t2.GetUpVector();
 
-	glm::vec3 poi = {0.0f,0.0f,0.0f};
+	TInTInfo tr;
+	tr.POI = glm::vec3({ 0.0f,1.0f,0.0f });
+
+	bool infront = false;
+	int lowestoverlapindex = 0;
 	float lowestoverlap = FLT_MAX;
-	/**/
-	glm::vec3 cn = { 0.0f,0.0f,0.0f };
-	float cnlowestoverlap = FLT_MAX;
 
 	std::vector<glm::vec3> vectoraxes = {
-		fv1,uv1,rv1
+		fv1,
+		uv1,
+		rv1	
 	};
 
-	for (glm::vec3& axis : vectoraxes) {
-		std::optional<AxisCollisionCN> b = TAxisCollidesTCN(worldvertices1, worldvertices2, axis);
+	for (int i = 0; i < vectoraxes.size(); i++) {
+		std::optional<AxisCollisionCN> b = TAxisCollidesTCN(worldvertices1, worldvertices2, vectoraxes[i]);
 		if (not b.has_value()) return {};
 
 		if (b.value().overlap < lowestoverlap) {
 			lowestoverlap = b.value().overlap;
-			poi = b.value().POI;
-		}
-
-		if (b.value().overlap < cnlowestoverlap) {
-			cnlowestoverlap = b.value().overlap;
-			cn = axis * ((b.value().infront) ? 1.0f : -1.0f);
+			infront = b.value().infront;
+			lowestoverlapindex = i;
 		}
 	}
 
@@ -354,18 +354,12 @@ std::optional<TInTInfo> TInT(t& t1, t& t2) {
 	};
 
 	for (glm::vec3& axis : axes) {
-		std::optional<std::pair<float, glm::vec3>> b = TAxisCollidesT(worldvertices1, worldvertices2, axis);
-		if (not b.has_value()) return {};
-
-		if (b.value().first < lowestoverlap) {
-			lowestoverlap = b.value().first;
-			poi = b.value().second;
-		}
+		 
+		if (not (axis == glm::vec3(0.0f,0.0f,0.0f)) and not TAxisCollidesTNoInfo(worldvertices1, worldvertices2, axis)) {
+			return {};
+		};
 	}
-
-	TInTInfo tr;
-	tr.POI = poi;
-	tr.CN = cn;
+	glm::vec3 cn = vectoraxes[lowestoverlapindex] * ((infront) ? 1.0f : -1.0f);
 
 	//FINAL
 	return tr;

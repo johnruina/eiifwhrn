@@ -137,27 +137,7 @@ public:
 		}
 	}
 
-	void Step(float dt) {
-		for (p* p : objects) {
-			if (p->velocity == true) {
-				p->force += p->mass * gravity
-					//+ -p->linearvelocity/2.0f
-					;
-				//p->angularvelocity += -(p->angularvelocity / 2.0f)/p->mass*dt;
-				p->linearvelocity += p->force / p->mass * dt;
-			}
-		}
-		ResolveCollisions(dt);
-
-		for (p* p : objects) {
-			if (p->velocity == true) {
-				p->pointer->t.TranslateBy(p->linearvelocity * dt);
-				p->pointer->t.RotateByQuaternion(glm::quat(p->angularvelocity * dt));
-
-				p->force = glm::vec3(0.0f);
-			}
-		}
-	}
+	void Step(float dt);
 	void SolveCollisions(std::vector<Collision> collisions,float dt) {
 		for (Collision collision : collisions) {
 			Resolve(&collision);

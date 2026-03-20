@@ -66,8 +66,6 @@ public:
 	}
 
 	std::vector<Mesh*> meshes;
-private:
-	
 	void NormalizeVertices() {
 		float biggestx;
 		float smallestx;
@@ -125,6 +123,8 @@ private:
 		}
 
 	}
+private:
+	//IMPORT STUFF
 	std::string directory;
 
 	void LoadModel(std::string path) {

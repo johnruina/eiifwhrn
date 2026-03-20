@@ -53,7 +53,7 @@
 #include "RenderSystem.h"
 #include "Mesh.h"
 #include "Sound.h"
-#include "SoundSystem.h"
+#include "Lighting.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -83,6 +83,7 @@ Engine::Engine() {
     rendersystem->Initialize();
 
     //SHADERS
+
     Shader* SkyboxShader = new Shader("shaders/skybox.vert", "shaders/skybox.frag");
     Shader* ScreenShader = new Shader("shaders/ScreenShader.vert", "shaders/ScreenShader.frag");
     Shader* MeshShader = new Shader("shaders/default.vert", "shaders/default.frag");
@@ -90,7 +91,9 @@ Engine::Engine() {
     Shader* BoxShader = new Shader("shaders/Box.vert", "shaders/Box.frag");
     Shader* Text2DShader = new Shader("shaders/2DText.vert", "shaders/2DText.frag");
     Shader* ParticleShader = new Shader("shaders/Particle.vert", "shaders/Particle.frag");
+   // Shader* ShadowShader = new Shader("shaders/shadow.vert", "shaders/shadow.frag");
 
+    //rendersystem->ShadowShader = ShadowShader;
     rendersystem->BoxShader = BoxShader;
     rendersystem->MeshShader = MeshShader;
     rendersystem->ImageBoxShader = ImageBoxShader;
@@ -98,14 +101,15 @@ Engine::Engine() {
     rendersystem->ParticleShader = ParticleShader;
     rendersystem->SkyboxShader = SkyboxShader;
     rendersystem->ScreenShader = ScreenShader;
-    //LIGHTING
 
-    //MainDirLight.Initialize(glm::vec3(0.5f), glm::vec3(0.5f), glm::vec3(0.5f), glm::vec3(0.0f, -1.0f, 1.0f));
-
-    camera = new Camera();
     physicsengine = new Physics();
 
+    lighting = new Lighting();
+
     mainf = new Folder();
+
+    camera = new Camera();
+    camera->t.TranslateTo({ 0.0f,5.0f,0.0f });
 
     //FONTS
     std::vector<Font> fonts;
@@ -158,7 +162,7 @@ Engine::Engine() {
     testgui->Color = { 1.0f,1.0f,1.0f };
     testgui->Opacity = 0.8f;
     testgui->rounding = 0.1f;
-    testgui->AddToRenderSystem();
+    //testgui->AddToRenderSystem();
 
     Texture* magic = new Texture("assets/itsmagicbitch.jpg");
     testgui->tex = magic;
@@ -252,6 +256,7 @@ void Engine::Initiate() {
                 Mesh* nc = CreateCubeMesh();
                 nc->t.ScaleTo(1.0f);
                 nc->t.TranslateTo(camera->t.GetTranslation());
+                nc->t.RotateByEulerAngles({0.0f,0.0f,0.0f});
                 nc->AddToRenderSystem();
                 mainf->AddChild(nc);
                 p* np = new p(nc);

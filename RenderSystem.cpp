@@ -14,7 +14,7 @@
 
 
 void RenderSystem::Initialize() {
-	framebuffer = new FBO();
+	screenfbo = new FBO();
 	skyboxVAO = new VAO();
 	skyboxVBO = new VBO();
 	quadVAO = new VAO();
@@ -48,7 +48,7 @@ void RenderSystem::Initialize() {
 	Cubemap* skyboxcm = new Cubemap();
 	skyboxcm->FillCubemap(faces);
 	skybox = skyboxcm;
-	framebuffer->Bind();
+	screenfbo->Bind();
 	glGenTextures(1, &textureColorbuffer);
 	glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, window->width, window->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -64,7 +64,25 @@ void RenderSystem::Initialize() {
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-	framebuffer->Unbind();
+	screenfbo->Unbind();
+	
+	shadowdepthmapfbo = new FBO();
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	glGenTextures(1, &depthMaptexture);
+	glBindTexture(GL_TEXTURE_2D, depthMaptexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	shadowdepthmapfbo->Bind();
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMaptexture, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
 }
 
 void RenderSystem::RenderRenderable(Renderable* renderable, Camera& camera)
@@ -79,8 +97,32 @@ void RenderSystem::Render(Camera& camera)
 	glm::mat4 proj = camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f);
 	glm::mat4 view = camera.GetViewMatrix();
 
-	framebuffer->Bind();
+	float near_plane = 1.0f, far_plane = 7.5f;
+	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+	glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
+	//SHADOWS
+	/*
+	glViewport(0, 0, 1024, 1024);
+	shadowdepthmapfbo->Bind();
+	glClear(GL_DEPTH_BUFFER_BIT);
+	ShadowShader->Activate();
+
+	ShadowShader->SetMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+	for (Renderable* r : renderables) {
+		//render opaque meshes and sort the non opaques in this loop
+		if (r->shadertype == Renderable::ShaderType::MeshShader) {
+			r->Render(*ShadowShader);
+		}
+	}
+	*/
+	//MAIN SCENE
+	screenfbo->Bind();
+	glViewport(0, 0, window->width, window->height);
 	glEnable(GL_DEPTH_TEST);
 
 	//IMPORTANT
@@ -109,7 +151,8 @@ void RenderSystem::Render(Camera& camera)
 	//std::map<float,Renderable*> nonopaque;
 
 	PrepareMeshShader(camera);
-
+	MeshShader->SetMat4("lightSpaceMatrix", lightSpaceMatrix);
+	glBindTexture(GL_TEXTURE_2D, depthMaptexture);
 	MeshShader->Set3F("dirLight.ambient", glm::vec3(0.5f));
 	MeshShader->Set3F("dirLight.diffuse", glm::vec3(0.5f));
 	MeshShader->Set3F("dirLight.specular", glm::vec3(0.5f));
@@ -137,7 +180,7 @@ void RenderSystem::Render(Camera& camera)
 	}*/
 
 	//FRAMEBUFFER
-	framebuffer->Unbind();
+	screenfbo->Unbind();
 	glDisable(GL_DEPTH_TEST);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);

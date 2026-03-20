@@ -40,8 +40,12 @@
     <ClCompile Include="RenderSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Sound.cpp" />
-    <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="Physics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h">
@@ -149,6 +153,12 @@
     <ClInclude Include="Rig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MeshData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Lighting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
@@ -198,25 +208,25 @@
     <None Include="shaders\default.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\skybox.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\ScreenShader.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\ScreenShader.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\DebugCube.frag">
+    <None Include="rig.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\DebugCube.vert">
+    <None Include="shaders\shadow.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\shadow.vert">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\skybox.frag">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="rig.vert">
+    <None Include="shaders\skybox.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

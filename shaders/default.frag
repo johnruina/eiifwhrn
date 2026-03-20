@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec3 normal;
 in vec2 texCoord;
 in vec3 FragPos;
+in vec4 fragposlightspace;
 
 struct Material {
     vec3 ambient;
@@ -36,11 +37,18 @@ uniform DirLight dirLight;
 
 uniform vec3 viewPos;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_diffuse2;
-uniform sampler2D texture_diffuse3;
-uniform sampler2D texture_specular1;
-uniform sampler2D texture_specular2;
+uniform sampler2D shadowMap;
+
+float ShadowCalculation(vec4 fragposlightspace)
+{
+    // perform perspective divide
+    vec3 projCoords = fragposlightspace.xyz / fragposlightspace.w;
+    projCoords = projCoords * 0.5 + 0.5; 
+    float closestDepth = texture(shadowMap, projCoords.xy).r;   
+    float currentDepth = projCoords.z;  
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;  
+    return shadow;
+}
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
 {
@@ -54,11 +62,12 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 ambient  = light.ambient;
     vec3 diffuse  = light.diffuse  * diff;
     vec3 specular = light.specular * spec;
-    return (ambient + diffuse + specular);
+    return (ambient + (diffuse + specular) * ShadowCalculation(fragposlightspace));
 }  
 
 void main()
 {
+
     float gamma = 2.2;
 
     //vec4 lightless = texture(texture_diffuse1, TexCoords);
@@ -74,4 +83,5 @@ void main()
 
     FragColor = vec4(pow(pregamma.rgb, vec3(1.0/gamma)), pregamma.a);
 
+    //FragColor = vec4(1.0f,1.0f,1.0f,1.0f);
 }
