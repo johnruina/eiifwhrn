@@ -155,8 +155,8 @@ void RenderSystem::Render(Camera& camera)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMaptexture);
 	MeshShader->Set3F("dirLight.ambient", glm::vec3(0.3f));
-	MeshShader->Set3F("dirLight.diffuse", glm::vec3(0.7f));
-	MeshShader->Set3F("dirLight.specular", glm::vec3(0.0f));
+	MeshShader->Set3F("dirLight.diffuse", glm::vec3(0.4f));
+	MeshShader->Set3F("dirLight.specular", glm::vec3(0.3f));
 	MeshShader->Set3F("dirLight.direction", lighting->dirlighting.GetFrontVector());
 
 	for (Renderable* r : renderables) {
