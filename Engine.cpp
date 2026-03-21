@@ -91,9 +91,9 @@ Engine::Engine() {
     Shader* BoxShader = new Shader("shaders/Box.vert", "shaders/Box.frag");
     Shader* Text2DShader = new Shader("shaders/2DText.vert", "shaders/2DText.frag");
     Shader* ParticleShader = new Shader("shaders/Particle.vert", "shaders/Particle.frag");
-   // Shader* ShadowShader = new Shader("shaders/shadow.vert", "shaders/shadow.frag");
+    Shader* ShadowShader = new Shader("shaders/shadow.vert", "shaders/shadow.frag");
 
-    //rendersystem->ShadowShader = ShadowShader;
+    rendersystem->ShadowShader = ShadowShader;
     rendersystem->BoxShader = BoxShader;
     rendersystem->MeshShader = MeshShader;
     rendersystem->ImageBoxShader = ImageBoxShader;
@@ -103,8 +103,6 @@ Engine::Engine() {
     rendersystem->ScreenShader = ScreenShader;
 
     physicsengine = new Physics();
-
-    lighting = new Lighting();
 
     mainf = new Folder();
 
@@ -170,12 +168,12 @@ Engine::Engine() {
     Texture* snowflake = new Texture("assets/snowflake.png");
     rain->tex = snowflake;
     
-    Model leiheng("assets/bullet.obj");
+    Model leiheng("assets/Untitled.obj");
     leiheng.t.TranslateTo({ 5.0f,10.0f,0.0f });
     leiheng.t.ScaleTo({ 1.0f,1.0f,1.0f });
     for (Mesh* mesh : leiheng.meshes) {
         auto newmesh = mesh->Clone();
-        newmesh->t.TranslateBy({ 0.0f,10.0f,0.0f });
+        newmesh->t.TranslateBy({ 4.0f,4.0f,4.0f });
         mainf->AddChild(newmesh);
         newmesh->AddToRenderSystem();
     }
@@ -194,6 +192,13 @@ Engine::Engine() {
     cube->t.TranslateTo({ 5.0f,4.0f,6.5f });
     cube->name = "cube";
     cube->AddToRenderSystem();
+    mainf->AddChild(cube);
+
+    Mesh* cube2 = CreateCubeMesh();
+    cube2->t.ScaleTo({ 1.0f,1.0f,1.0f });
+    cube2->t.TranslateTo({ 10.0f,4.0f,10.5f });
+    cube2->name = "cubee";
+    cube2->AddToRenderSystem();
     mainf->AddChild(cube);
 }
 

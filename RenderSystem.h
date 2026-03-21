@@ -56,6 +56,7 @@ class FBO;
 class VBO;
 class VAO;
 class Cubemap;
+class Lighting;
 
 class Renderable {
 public:
@@ -80,6 +81,8 @@ public:
 
 class RenderSystem {
 public:	
+
+	Lighting* lighting;
 
 	//FRAMEBUFFER STUFF
 	//FRAMEBUFFER

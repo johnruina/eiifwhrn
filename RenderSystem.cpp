@@ -10,7 +10,7 @@
 #include "Camera.h"
 #include "Cubemap.h"
 #include "QuadVertices.h"
-
+#include "Lighting.h"
 
 
 void RenderSystem::Initialize() {
@@ -74,14 +74,18 @@ void RenderSystem::Initialize() {
 		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	shadowdepthmapfbo->Bind();
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMaptexture, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	lighting = new Lighting();
 	
 }
 
@@ -97,29 +101,25 @@ void RenderSystem::Render(Camera& camera)
 	glm::mat4 proj = camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f);
 	glm::mat4 view = camera.GetViewMatrix();
 
-	float near_plane = 1.0f, far_plane = 7.5f;
-	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-	glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+	float near_plane = 1.0f, far_plane = 20.0f;
+	glm::mat4 lightSpaceMatrix = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane) * glm::lookAt(lighting->dirlighting.GetTranslation(), lighting->dirlighting.GetTranslation() + lighting->dirlighting.GetFrontVector(), worldUp);
 
 	//SHADOWS
-	/*
+	glCullFace(GL_FRONT);
+	glEnable(GL_DEPTH_TEST);
 	glViewport(0, 0, 1024, 1024);
 	shadowdepthmapfbo->Bind();
 	glClear(GL_DEPTH_BUFFER_BIT);
+	glActiveTexture(GL_TEXTURE0);
 	ShadowShader->Activate();
-
 	ShadowShader->SetMat4("lightSpaceMatrix", lightSpaceMatrix);
-
 	for (Renderable* r : renderables) {
-		//render opaque meshes and sort the non opaques in this loop
 		if (r->shadertype == Renderable::ShaderType::MeshShader) {
 			r->Render(*ShadowShader);
 		}
 	}
-	*/
+	
+	glCullFace(GL_BACK);
 	//MAIN SCENE
 	screenfbo->Bind();
 	glViewport(0, 0, window->width, window->height);
@@ -152,11 +152,12 @@ void RenderSystem::Render(Camera& camera)
 
 	PrepareMeshShader(camera);
 	MeshShader->SetMat4("lightSpaceMatrix", lightSpaceMatrix);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthMaptexture);
-	MeshShader->Set3F("dirLight.ambient", glm::vec3(0.5f));
-	MeshShader->Set3F("dirLight.diffuse", glm::vec3(0.5f));
-	MeshShader->Set3F("dirLight.specular", glm::vec3(0.5f));
-	MeshShader->Set3F("dirLight.direction", glm::normalize(glm::vec3(5.0f,5.0f,5.0f)));
+	MeshShader->Set3F("dirLight.ambient", glm::vec3(0.3f));
+	MeshShader->Set3F("dirLight.diffuse", glm::vec3(0.7f));
+	MeshShader->Set3F("dirLight.specular", glm::vec3(0.0f));
+	MeshShader->Set3F("dirLight.direction", lighting->dirlighting.GetFrontVector());
 
 	for (Renderable* r : renderables) {
 		//render opaque meshes and sort the non opaques in this loop
@@ -210,7 +211,8 @@ void RenderSystem::Render(Camera& camera)
 		}
 	}
 
-
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glfwSwapBuffers(window->handle);
 }
 
