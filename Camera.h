@@ -36,7 +36,7 @@ public:
 	void Matrix(float FOVdeg, float nearPlane, float farPlane, Shader& shader) {
 		glm::mat4 view = glm::mat4(1.0f);
 		glm::mat4 proj = glm::mat4(1.0f);
-		view = glm::lookAt(t.GetTranslation(), t.GetTranslation() + t.GetFrontVector(),worldUp);
+		view = GetViewMatrix();
 		proj = glm::perspective(glm::radians(FOVdeg), ((float)window->width / (float)window->height), nearPlane, farPlane);
 		shader.SetMat4("proj", proj);
 		shader.SetMat4("view", view);
@@ -44,7 +44,7 @@ public:
 	};
 
 	glm::mat4 GetViewMatrix() {
-		return glm::lookAt(t.GetTranslation(), t.GetTranslation() + t.GetFrontVector(), worldUp);
+		return glm::lookAt(t.GetTranslation(), t.GetTranslation() + t.GetFrontVector(), t.GetUpVector());
 	}
 
 	glm::mat4 GetProjectionMatrix(float FOVdeg, float nearPlane, float farPlane) {

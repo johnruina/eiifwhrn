@@ -32,7 +32,6 @@ void Physics::Resolve(Collision* c)
 	glm::vec3 ascale = a->pointer->t.GetScale();
 	glm::vec3 bscale = b->pointer->t.GetScale();
 
-	Output(c->CN);
 	glm::vec3 relativevelocity = a->linearvelocity - b->linearvelocity;
 	glm::vec3 collisionnormal = c->CN;
 	//collisionnormal = {0.0f,1.0f,0.0f};

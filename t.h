@@ -181,6 +181,18 @@ public:
 		return pos;
 	};
 
+	float GetTranslationX() const noexcept {
+		return pos.x;
+	}
+
+	float GetTranslationY() const noexcept {
+		return pos.y;
+	}
+
+	float GetTranslationZ() const noexcept {
+		return pos.z;
+	}
+
 	void CopyMatrixTo(t& target) const noexcept {
 
 		target.scale = scale;

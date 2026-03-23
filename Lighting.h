@@ -10,7 +10,7 @@ public:
 
 	Lighting() {
 		dirlighting.RotateToQuaternion(glm::quat({ glm::radians(90.0f),0.0f,0.0f}));
-		dirlighting.TranslateTo({0.0f,10.0f,0.0f});
+		dirlighting.TranslateTo({0.0f,0.0f,0.0f});
 	}
 
 

@@ -168,14 +168,14 @@ Engine::Engine() {
     Texture* snowflake = new Texture("assets/snowflake.png");
     rain->tex = snowflake;
     
-    Model leiheng("assets/lh.obj");
+    Model leiheng("assets/test.obj");
     leiheng.t.ScaleTo({ 1.0f,1.0f,1.0f });
     Folder* lhf = new Folder();
     lhf->name = "leihengfolder";
     for (Mesh* mesh : leiheng.meshes) {
         auto newmesh = mesh->Clone();
         newmesh->t.TranslateBy({ 4.0f,4.0f,4.0f });
-        newmesh->t.RotateByEulerAngles({0.0f,0.0f,glm::radians(90.0f)});
+        //newmesh->t.RotateByEulerAngles({0.0f,0.0f,glm::radians(90.0f)});
         lhf->AddChild(newmesh);
         newmesh->AddToRenderSystem();
     }

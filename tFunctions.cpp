@@ -359,7 +359,7 @@ std::optional<TInTInfo> TInT(t& t1, t& t2) {
 			return {};
 		};
 	}
-	glm::vec3 cn = vectoraxes[lowestoverlapindex] * ((infront) ? 1.0f : -1.0f);
+	tr.CN = vectoraxes[lowestoverlapindex] * ((infront) ? 1.0f : -1.0f);
 
 	//FINAL
 	return tr;

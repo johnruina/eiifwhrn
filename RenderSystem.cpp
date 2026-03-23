@@ -67,7 +67,7 @@ void RenderSystem::Initialize() {
 	screenfbo->Unbind();
 	
 	shadowdepthmapfbo = new FBO();
-	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 	glGenTextures(1, &depthMaptexture);
 	glBindTexture(GL_TEXTURE_2D, depthMaptexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
@@ -76,7 +76,7 @@ void RenderSystem::Initialize() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	float borderColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	shadowdepthmapfbo->Bind();
@@ -98,16 +98,17 @@ void RenderSystem::RenderRenderable(Renderable* renderable, Camera& camera)
 
 void RenderSystem::Render(Camera& camera)
 {
+	lighting->dirlighting.RotateByEulerAngles({glm::radians(0.05f),0.0f,0.0f});
 	glm::mat4 proj = camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f);
 	glm::mat4 view = camera.GetViewMatrix();
 
-	float near_plane = 1.0f, far_plane = 20.0f;
-	glm::mat4 lightSpaceMatrix = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, near_plane, far_plane) * glm::lookAt(lighting->dirlighting.GetTranslation(), lighting->dirlighting.GetTranslation() + lighting->dirlighting.GetFrontVector(), worldUp);
+	float near_plane = 0.1f, far_plane = 100.0f;
+	glm::mat4 lightSpaceMatrix = glm::ortho(-80.0f, 80.0f, -80.0f, 80.0f, near_plane, far_plane) * glm::lookAt(camera.t.GetTranslation() - lighting->dirlighting.GetFrontVector() * 10.0f, camera.t.GetTranslation(), camera.t.GetUpVector());
 
 	//SHADOWS
 	glCullFace(GL_FRONT);
 	glEnable(GL_DEPTH_TEST);
-	glViewport(0, 0, 1024, 1024);
+	glViewport(0, 0, 2048, 2048);
 	shadowdepthmapfbo->Bind();
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glActiveTexture(GL_TEXTURE0);
