@@ -89,6 +89,7 @@ public:
 struct Collision {
 	glm::vec3 POI; // point of intersection
 	glm::vec3 CN; // COLLISION NORMAL
+	float overlap;
 	p* ObjA;
 	p* ObjB;
 
@@ -157,6 +158,7 @@ public:
 						Collision tp(a,b);
 						tp.POI = e.value().POI;
 						tp.CN = e.value().CN;
+						tp.overlap = e.value().overlap;
 						collisions.push_back(tp);
 					}
 				}

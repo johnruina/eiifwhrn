@@ -214,9 +214,6 @@
     <None Include="shaders\ScreenShader.vert">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="rig.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\shadow.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -227,6 +224,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\rig.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

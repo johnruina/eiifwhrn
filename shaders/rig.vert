@@ -9,15 +9,21 @@ layout(location = 6) in vec4 weights;
 uniform mat4 proj;
 uniform mat4 view;
 uniform mat4 modl;
-	
+
+uniform mat4 lightSpaceMatrix;
+
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
-uniform mat4 finalBonesMatrices[MAX_BONES];
+//uniform mat4 finalBonesMatrices[MAX_BONES];
 	
-out vec2 TexCoords;
+out vec3 normal;
+out vec2 texCoord;
+out vec3 FragPos;
+out vec4 fragposlightspace;
 	
 void main()
 {
+    /*
     vec4 totalPosition = vec4(0.0f);
     for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
     {
@@ -32,8 +38,10 @@ void main()
         totalPosition += localPosition * weights[i];
         vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * norm;
     }
-		
-    mat4 viewModel = view * modl;
-    gl_Position =  proj * viewModel * totalPosition;
-    TexCoords = tex;
+	*/
+    FragPos = vec3(modl * vec4(pos, 1.0));
+    fragposlightspace = lightSpaceMatrix * vec4(FragPos, 1.0);
+    gl_Position =  proj * view * modl * vec4(pos,1.0f);
+    normal = norm;
+    texCoord = tex;
 }

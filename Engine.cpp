@@ -54,6 +54,7 @@
 #include "Mesh.h"
 #include "Sound.h"
 #include "Lighting.h"
+#include "Rig.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -68,22 +69,13 @@ Engine::Engine() {
 
     glfwSwapInterval(1);
 
-    glEnable(GL_DEPTH_TEST);
-    glViewport(0, 0, window->width, window->height);
-
-    glEnable(GL_MULTISAMPLE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
     //SYSTEM INTIALIZATION
     rendersystem = new RenderSystem();
     rendersystem->Initialize();
 
     //SHADERS
 
+    Shader* RigShader = new Shader("shaders/rig.vert", "shaders/default.frag");
     Shader* SkyboxShader = new Shader("shaders/skybox.vert", "shaders/skybox.frag");
     Shader* ScreenShader = new Shader("shaders/ScreenShader.vert", "shaders/ScreenShader.frag");
     Shader* MeshShader = new Shader("shaders/default.vert", "shaders/default.frag");
@@ -93,6 +85,7 @@ Engine::Engine() {
     Shader* ParticleShader = new Shader("shaders/Particle.vert", "shaders/Particle.frag");
     Shader* ShadowShader = new Shader("shaders/shadow.vert", "shaders/shadow.frag");
 
+    rendersystem->RigShader = RigShader;
     rendersystem->ShadowShader = ShadowShader;
     rendersystem->BoxShader = BoxShader;
     rendersystem->MeshShader = MeshShader;
@@ -124,6 +117,9 @@ Engine::Engine() {
 
     //STUFF
 
+    Rig* testrig = new Rig("assets/rig.dae");
+    testrig->t.TranslateBy({0.0f,10.0f,0.0f});
+    testrig->BindToRenderSystem();
     ParticleEmitter* rain = new ParticleEmitter;
     rain->t.TranslateTo({ 0.0f,10.0f,0.0f });
     rain->t.RotateToQuaternion(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)));
@@ -136,7 +132,7 @@ Engine::Engine() {
     rain->color = { 1.0f,1.0f,1.0f,1.0f };
     rain->emitdirection = ParticleEmitter::EmitDirection::Perpendicular;
     rain->name = "rain";
-    rain->AddToRenderSystem();
+    rain->BindToRenderSystem();
     mainf->AddChild(rain);
     
     Sound* music = new Sound();
@@ -151,7 +147,7 @@ Engine::Engine() {
     crosshair->t2d.center = { 0.5f,0.5f };
     crosshair->t2d.position = { 0.5f,0.5f,0.0f,0.0f };
     crosshair->t2d.size = { 0.0f,0.0f,4.0f,4.0f };
-    crosshair->AddToRenderSystem();
+    crosshair->BindToRenderSystem();
 
     ImageBox* testgui = new ImageBox();
     testgui->t2d.center = { 0.0f,1.0f };
@@ -160,7 +156,7 @@ Engine::Engine() {
     testgui->Color = { 1.0f,1.0f,1.0f };
     testgui->Opacity = 0.8f;
     testgui->rounding = 0.1f;
-    //testgui->AddToRenderSystem();
+    testgui->BindToRenderSystem();
 
     Texture* magic = new Texture("assets/itsmagicbitch.jpg");
     testgui->tex = magic;
@@ -177,7 +173,7 @@ Engine::Engine() {
         newmesh->t.TranslateBy({ 4.0f,4.0f,4.0f });
         //newmesh->t.RotateByEulerAngles({0.0f,0.0f,glm::radians(90.0f)});
         lhf->AddChild(newmesh);
-        newmesh->AddToRenderSystem();
+        newmesh->BindToRenderSystem();
     }
     mainf->AddChild(lhf);
     Mesh* floor = CreateCubeMesh();
@@ -185,7 +181,7 @@ Engine::Engine() {
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
     floor->name = "floor";
     p* np = new p(floor);
-    floor->AddToRenderSystem();
+    floor->BindToRenderSystem();
     np->velocity = false;
     mainf->AddChild(floor);
     physicsengine->AddObject(np);
@@ -193,14 +189,14 @@ Engine::Engine() {
     cube->t.ScaleTo({ 1.0f,1.0f,1.0f });
     cube->t.TranslateTo({ 5.0f,4.0f,6.5f });
     cube->name = "cube";
-    cube->AddToRenderSystem();
+    cube->BindToRenderSystem();
     mainf->AddChild(cube);
 
     Mesh* cube2 = CreateCubeMesh();
     cube2->t.ScaleTo({ 1.0f,1.0f,1.0f });
     cube2->t.TranslateTo({ 10.0f,4.0f,10.5f });
     cube2->name = "cubee";
-    cube2->AddToRenderSystem();
+    cube2->BindToRenderSystem();
     mainf->AddChild(cube);
 }
 
@@ -264,7 +260,7 @@ void Engine::Initiate() {
                 nc->t.ScaleTo(1.0f);
                 nc->t.TranslateTo(camera->t.GetTranslation());
                 nc->t.RotateByEulerAngles({0.0f,0.0f,0.0f});
-                nc->AddToRenderSystem();
+                nc->BindToRenderSystem();
                 mainf->AddChild(nc);
                 p* np = new p(nc);
                 physicsengine->AddObject(np);

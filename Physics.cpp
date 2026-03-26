@@ -26,60 +26,83 @@ void Physics::Step(float dt) {
 
 void Physics::Resolve(Collision* c)
 {
-	p* a = c->ObjA;
-	p* b = c->ObjB;
+    p* a = c->ObjA;
+    p* b = c->ObjB;
+    glm::vec3 collisionnormal = c->CN;
+    glm::vec3 relativecola = c->POI - a->pointer->t.GetTranslation();
+    glm::vec3 relativecolb = c->POI - b->pointer->t.GetTranslation();
 
-	glm::vec3 ascale = a->pointer->t.GetScale();
-	glm::vec3 bscale = b->pointer->t.GetScale();
+    constexpr float onedividedbytwelve = 0.08333333333f;
+    constexpr float restitution = 0.4f;
 
-	glm::vec3 relativevelocity = a->linearvelocity - b->linearvelocity;
-	glm::vec3 collisionnormal = c->CN;
-	//collisionnormal = {0.0f,1.0f,0.0f};
-	glm::vec3 relativecola = c->POI - a->pointer->t.GetTranslation();
-	glm::vec3 relativecolb = c->POI - b->pointer->t.GetTranslation();
+    // Inertia tensor A
+    glm::vec3 sqa = a->pointer->t.GetScale() * a->pointer->t.GetScale();
+    glm::mat3 invIA(0.0f);
+    invIA[0][0] = 1.0f / (onedividedbytwelve * a->mass * (sqa.y + sqa.z));
+    invIA[1][1] = 1.0f / (onedividedbytwelve * a->mass * (sqa.x + sqa.z));
+    invIA[2][2] = 1.0f / (onedividedbytwelve * a->mass * (sqa.x + sqa.y));
+    glm::mat3 rA = glm::mat3(a->pointer->t.GetRotationMatrix());
+    invIA = rA * invIA * glm::transpose(rA);
 
+    // Inertia tensor B
+    glm::vec3 sqb = b->pointer->t.GetScale() * b->pointer->t.GetScale();
+    glm::mat3 invIB(0.0f);
+    invIB[0][0] = 1.0f / (onedividedbytwelve * b->mass * (sqb.y + sqb.z));
+    invIB[1][1] = 1.0f / (onedividedbytwelve * b->mass * (sqb.x + sqb.z));
+    invIB[2][2] = 1.0f / (onedividedbytwelve * b->mass * (sqb.x + sqb.y));
+    glm::mat3 rB = glm::mat3(b->pointer->t.GetRotationMatrix());
+    invIB = rB * invIB * glm::transpose(rB);
 
-	constexpr float onedividedbytwelve = 0.08333333333f;
+    float invMassA = a->velocity ? 1.0f / a->GetMass() : 0.0f;
+    float invMassB = b->velocity ? 1.0f / b->GetMass() : 0.0f;
 
-	glm::vec3 sqa = a->pointer->t.GetScale() * a->pointer->t.GetScale();
-	glm::mat3 inverseinertiatensora(0.0f);
-	inverseinertiatensora[0][0] = 1.0f/(onedividedbytwelve * a->mass * (sqa.y + sqa.z));
-	inverseinertiatensora[1][1] = 1.0f / (onedividedbytwelve * a->mass * (sqa.x + sqa.z));
-	inverseinertiatensora[2][2] = 1.0f / (onedividedbytwelve * a->mass * (sqa.x + sqa.y));
-	glm::mat3 r = glm::mat3(a->pointer->t.GetRotationMatrix());
-	inverseinertiatensora = r * inverseinertiatensora * glm::transpose(r);
+    // Velocity at contact point for each body
+    glm::vec3 velA = a->linearvelocity + glm::cross(a->angularvelocity, relativecola);
+    glm::vec3 velB = b->linearvelocity + glm::cross(b->angularvelocity, relativecolb);
+    glm::vec3 relativeVelocity = velA - velB;
 
-	glm::vec3 sqb = b->pointer->t.GetScale() * b->pointer->t.GetScale();
-	glm::mat3 inverseinertiatensorb(0.0f);
-	inverseinertiatensorb[0][0] = 1.0f/(onedividedbytwelve * b->mass * (sqb.y + sqb.z));
-	inverseinertiatensorb[1][1] = 1.0f / (onedividedbytwelve * b->mass * (sqb.x + sqb.z));
-	inverseinertiatensorb[2][2] = 1.0f / (onedividedbytwelve * b->mass * (sqb.x + sqb.y));
-	r = glm::mat3(b->pointer->t.GetRotationMatrix());
-	inverseinertiatensorb = r * inverseinertiatensorb * glm::transpose(r);
+    float relativeVelAlongNormal = glm::dot(relativeVelocity, collisionnormal);
 
-	float inversemass1 = 1.0f / a->GetMass();
-	float inversemass2 = 1.0f / b->GetMass();
+    // Already separating
+    if (relativeVelAlongNormal > 0.0f) return;
 
-	float totalvelocity = -glm::dot(relativevelocity + glm::cross(b->angularvelocity, relativecolb) - glm::cross(a->angularvelocity,relativecola), collisionnormal);
+    glm::vec3 angularTermA = invIA * glm::cross(glm::cross(relativecola, collisionnormal), relativecola);
+    glm::vec3 angularTermB = invIB * glm::cross(glm::cross(relativecolb, collisionnormal), relativecolb);
+    float angularFactor = glm::dot(angularTermA + angularTermB, collisionnormal);
 
-	float impulse = glm::max(
-		totalvelocity / 
-		(inversemass1 + inversemass2
-		+ glm::dot(
-		inverseinertiatensora * glm::cross(glm::cross(relativecola, collisionnormal), relativecola) 
-		+ inverseinertiatensorb * glm::cross(glm::cross(relativecolb, collisionnormal), relativecolb)
-		, collisionnormal))
-		,0.0f);
+    float impulse = -(1.0f + restitution) * relativeVelAlongNormal
+        / (invMassA + invMassB + angularFactor);
 
-	float frictionfactor = 0.5f;
-	glm::vec3 frictionvector = glm::cross(glm::cross(collisionnormal, relativevelocity), collisionnormal);
-	if (a->velocity) {
-		a->linearvelocity += inversemass1 * impulse * collisionnormal;
-		a->angularvelocity += inverseinertiatensora * impulse * glm::cross(relativecola, collisionnormal);
-	}
+    // Normal impulse
+    glm::vec3 impulseVec = impulse * collisionnormal;
+    if (a->velocity) {
+        a->linearvelocity += invMassA * impulseVec;
+        a->angularvelocity += invIA * glm::cross(relativecola, impulseVec);
+    }
+    if (b->velocity) {
+        b->linearvelocity -= invMassB * impulseVec;
+        b->angularvelocity -= invIB * glm::cross(relativecolb, impulseVec);
+    }
 
-	if (b->velocity) {
-		b->linearvelocity -= inversemass2 * impulse * collisionnormal;
-		b->angularvelocity -= inverseinertiatensorb * impulse * glm::cross(relativecolb, collisionnormal);
-	}
+    // Friction impulse
+    glm::vec3 tangent = relativeVelocity - relativeVelAlongNormal * collisionnormal;
+    if (glm::length(tangent) > 1e-6f) {
+        tangent = glm::normalize(tangent);
+        float frictionMag = -glm::dot(relativeVelocity, tangent)
+            / (invMassA + invMassB
+                + glm::dot(invIA * glm::cross(glm::cross(relativecola, tangent), relativecola)
+                    + invIB * glm::cross(glm::cross(relativecolb, tangent), relativecolb),
+                    tangent));
+        constexpr float mu = 0.5f;
+        frictionMag = glm::clamp(frictionMag, -mu * impulse, mu * impulse);
+        glm::vec3 frictionImpulse = frictionMag * tangent;
+        if (a->velocity) {
+            a->linearvelocity += invMassA * frictionImpulse;
+            a->angularvelocity += invIA * glm::cross(relativecola, frictionImpulse);
+        }
+        if (b->velocity) {
+            b->linearvelocity -= invMassB * frictionImpulse;
+            b->angularvelocity -= invIB * glm::cross(relativecolb, frictionImpulse);
+        }
+    }
 }

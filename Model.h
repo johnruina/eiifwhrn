@@ -1,6 +1,6 @@
 #ifndef MODEL_CLASS
 #define MODEL_CLASS
-
+//DEPRECATED
 #include <iostream>
 #include <random>
 #include <vector>
@@ -49,7 +49,7 @@ public:
 	{	
 		glm::mat4 matrix = t.GetMatrix();
 		for (unsigned int i = 0; i < meshes.size(); i++) {
-			meshes[i]->Render(shader,matrix);
+			meshes[i]->Render(shader);
 		}
 	}
 	void RenderWireframe(Shader& shader)

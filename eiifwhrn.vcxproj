@@ -211,7 +211,6 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="rig.vert" />
     <None Include="shaders\2DText.frag" />
     <None Include="shaders\2DText.vert" />
     <None Include="shaders\Box.frag" />
@@ -222,6 +221,7 @@
     <None Include="shaders\ImageBox.vert" />
     <None Include="shaders\Particle.frag" />
     <None Include="shaders\Particle.vert" />
+    <None Include="shaders\rig.vert" />
     <None Include="shaders\ScreenShader.frag" />
     <None Include="shaders\ScreenShader.vert" />
     <None Include="shaders\shadow.frag" />

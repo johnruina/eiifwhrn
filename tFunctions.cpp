@@ -270,101 +270,109 @@ bool TInTNoInfo(t& t1, t& t2) {
 	//FINAL
 	return true;
 }
-
 std::optional<TInTInfo> TInT(t& t1, t& t2) {
+    std::vector<glm::vec3> worldvertices1 = {
+        {0.5f,0.5f,0.5f},{0.5f,-0.5f,0.5f},{0.5f,0.5f,-0.5f},{0.5f,-0.5f,-0.5f},
+        {-0.5f,0.5f,0.5f},{-0.5f,-0.5f,0.5f},{-0.5f,0.5f,-0.5f},{-0.5f,-0.5f,-0.5f},
+    };
+    std::vector<glm::vec3> worldvertices2 = worldvertices1;
+    glm::mat4 t1mat = t1.GetMatrix(), t2mat = t2.GetMatrix();
+    for (glm::vec3& v : worldvertices1) v = glm::vec3(t1mat * glm::vec4(v, 1.0f));
+    for (glm::vec3& v : worldvertices2) v = glm::vec3(t2mat * glm::vec4(v, 1.0f));
 
-	//FIRST IS POI, SECOND IS COLNORMAL
+    glm::vec3 fv1=t1.GetFrontVector(), rv1=t1.GetRightVector(), uv1=t1.GetUpVector();
+    glm::vec3 fv2=t2.GetFrontVector(), rv2=t2.GetRightVector(), uv2=t2.GetUpVector();
 
-	std::vector < glm::vec3 > worldvertices1 = { 
-		{0.5f,0.5f,0.5f},
-		{0.5f,-0.5f,0.5f},
-		{0.5f,0.5f,-0.5f},
-		{0.5f,-0.5f,-0.5f},
-		{-0.5f,0.5f,0.5f},
-		{-0.5f,-0.5f,0.5f},
-		{-0.5f,0.5f,-0.5f},
-		{-0.5f,-0.5f,-0.5f},
-	};
+    std::vector<glm::vec3> allAxes = {
+        fv1, uv1, rv1, fv2, uv2, rv2,
+        glm::cross(fv1,fv2), glm::cross(fv1,rv2), glm::cross(fv1,uv2),
+        glm::cross(rv1,fv2), glm::cross(rv1,rv2), glm::cross(rv1,uv2),
+        glm::cross(uv1,fv2), glm::cross(uv1,rv2), glm::cross(uv1,uv2)
+    };
 
-	std::vector < glm::vec3 > worldvertices2 = {
-	{0.5f,0.5f,0.5f},
-	{0.5f,-0.5f,0.5f},
-	{0.5f,0.5f,-0.5f},
-	{0.5f,-0.5f,-0.5f},
-	{-0.5f,0.5f,0.5f},
-	{-0.5f,-0.5f,0.5f},
-	{-0.5f,0.5f,-0.5f},
-	{-0.5f,-0.5f,-0.5f},
-	};
+    TInTInfo tr;
+    float lowestoverlap = FLT_MAX;
+    bool bestInfront = false;
+    int bestIndex = 0;
 
-	glm::mat4 t1mat = t1.GetMatrix();
-	glm::mat4 t2mat = t2.GetMatrix();
+    for (int i = 0; i < (int)allAxes.size(); i++) {
+        glm::vec3 axis = allAxes[i];
+        if (i >= 6) {
+            float len = glm::length(axis);
+            if (len < 1e-6f) continue;
+            axis = axis / len;
+            allAxes[i] = axis;
+        }
+        std::optional<AxisCollisionCN> b = TAxisCollidesTCN(worldvertices1, worldvertices2, axis);
+        if (!b.has_value()) return {};
+        if (b->overlap < lowestoverlap) {
+            lowestoverlap = b->overlap;
+            bestInfront = b->infront;
+            bestIndex = i;
+        }
+    }
 
-	for (glm::vec3& v : worldvertices1) {
-		v = glm::vec3(t1mat * glm::vec4(v, 1.0f));
-	}
-	for (glm::vec3& v : worldvertices2) {
-		v = glm::vec3(t2mat * glm::vec4(v, 1.0f));
-	}
+	tr.overlap = lowestoverlap;
+    tr.CN = allAxes[bestIndex] * (bestInfront ? 1.0f : -1.0f);
 
-	//FIRST 6 AXES
+    // POI
+    glm::mat4 t1inv = glm::inverse(t1mat), t2inv = glm::inverse(t2mat);
+    std::vector<glm::vec3> contactPts;
+    for (const glm::vec3& v : worldvertices2) {
+        glm::vec3 local = glm::vec3(t1inv * glm::vec4(v, 1.0f));
+        if (glm::all(glm::lessThanEqual(glm::abs(local), glm::vec3(0.5f + 1e-4f))))
+            contactPts.push_back(v);
+    }
+    for (const glm::vec3& v : worldvertices1) {
+        glm::vec3 local = glm::vec3(t2inv * glm::vec4(v, 1.0f));
+        if (glm::all(glm::lessThanEqual(glm::abs(local), glm::vec3(0.5f + 1e-4f))))
+            contactPts.push_back(v);
+    }
 
-	glm::vec3 fv1 = t1.GetFrontVector();
-	glm::vec3 rv1 = t1.GetRightVector();
-	glm::vec3 uv1 = t1.GetUpVector();
-	glm::vec3 fv2 = t2.GetFrontVector();
-	glm::vec3 rv2 = t2.GetRightVector();
-	glm::vec3 uv2 = t2.GetUpVector();
+    if (contactPts.empty()) {
+        static const int edgeIdx[][2] = {
+            {0,1},{0,2},{1,3},{2,3},
+            {4,5},{4,6},{5,7},{6,7},
+            {0,4},{1,5},{2,6},{3,7}
+        };
 
-	TInTInfo tr;
-	tr.POI = glm::vec3({ 0.0f,1.0f,0.0f });
+        float bestDist = FLT_MAX;
+        glm::vec3 bestPt(0.0f);
 
-	bool infront = false;
-	int lowestoverlapindex = 0;
-	float lowestoverlap = FLT_MAX;
+        for (auto& e1 : edgeIdx) {
+            glm::vec3 p1 = worldvertices1[e1[0]], p2 = worldvertices1[e1[1]];
+            for (auto& e2 : edgeIdx) {
+                glm::vec3 p3 = worldvertices2[e2[0]], p4 = worldvertices2[e2[1]];
 
-	std::vector<glm::vec3> vectoraxes = {
-		fv1,
-		uv1,
-		rv1	
-	};
+                glm::vec3 d1=p2-p1, d2=p4-p3, r=p1-p3;
+                float a=glm::dot(d1,d1), e=glm::dot(d2,d2), f=glm::dot(d2,r);
+                float s, t;
+                if (a < 1e-10f && e < 1e-10f) { s=0.0f; t=0.0f; }
+                else if (a < 1e-10f) { s=0.0f; t=glm::clamp(f/e,0.0f,1.0f); }
+                else {
+                    float c=glm::dot(d1,r), b=glm::dot(d1,d2), denom=a*e-b*b;
+                    if (e < 1e-10f) { t=0.0f; s=glm::clamp(-c/a,0.0f,1.0f); }
+                    else {
+                        s = denom > 1e-10f ? glm::clamp((b*f-c*e)/denom,0.0f,1.0f) : 0.0f;
+                        t = (b*s+f)/e;
+                        if      (t < 0.0f) { t=0.0f; s=glm::clamp(-c/a,0.0f,1.0f); }
+                        else if (t > 1.0f) { t=1.0f; s=glm::clamp((b-c)/a,0.0f,1.0f); }
+                    }
+                }
+                glm::vec3 c1=p1+s*d1, c2=p3+t*d2;
+                float dist = glm::length(c1-c2);
+                if (dist < bestDist) { bestDist=dist; bestPt=(c1+c2)*0.5f; }
+            }
+        }
+        tr.POI = bestPt;
+    } else {
+        tr.POI = glm::vec3(0.0f);
+        for (const glm::vec3& p : contactPts) tr.POI += p;
+        tr.POI /= (float)contactPts.size();
+    }
 
-	for (int i = 0; i < vectoraxes.size(); i++) {
-		std::optional<AxisCollisionCN> b = TAxisCollidesTCN(worldvertices1, worldvertices2, vectoraxes[i]);
-		if (not b.has_value()) return {};
-
-		if (b.value().overlap < lowestoverlap) {
-			lowestoverlap = b.value().overlap;
-			infront = b.value().infront;
-			lowestoverlapindex = i;
-		}
-	}
-
-	std::vector<glm::vec3> axes = {
-		fv2,uv2,rv2,
-		glm::cross(fv1,fv2),
-		glm::cross(fv1, rv2),
-		glm::cross(fv1, uv2),
-		glm::cross(rv1, fv2),
-		glm::cross(rv1, rv2),
-		glm::cross(rv1, uv2),
-		glm::cross(uv1, fv2),
-		glm::cross(uv1, rv2),
-		glm::cross(uv1, uv2)
-	};
-
-	for (glm::vec3& axis : axes) {
-		 
-		if (not (axis == glm::vec3(0.0f,0.0f,0.0f)) and not TAxisCollidesTNoInfo(worldvertices1, worldvertices2, axis)) {
-			return {};
-		};
-	}
-	tr.CN = vectoraxes[lowestoverlapindex] * ((infront) ? 1.0f : -1.0f);
-
-	//FINAL
-	return tr;
+    return tr;
 }
-
 glm::quat AngleAxis(glm::vec3 axis, float angle) {
 	float halfangle = angle * 0.5f;
 

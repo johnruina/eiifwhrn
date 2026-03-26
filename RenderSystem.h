@@ -62,6 +62,7 @@ class Renderable {
 public:
 
 	enum ShaderType {
+		RigShader,
 		MeshShader,
 		ImageBoxShader,
 		BoxShader,
@@ -73,7 +74,7 @@ public:
 	bool opaque = true;
 	Renderable();
 	~Renderable();
-	void AddToRenderSystem();
+	void BindToRenderSystem();
 	virtual void Render(Shader& ShaderProgram) {
 
 	}
@@ -92,6 +93,8 @@ public:
 	unsigned int textureColorbuffer;
 	unsigned int rbo;
 
+	unsigned int SHADOW_RESOLUTION;
+
 	VAO* quadVAO;
 	VBO* quadVBO;
 
@@ -102,6 +105,7 @@ public:
 	Shader* SkyboxShader;
 	Shader* ScreenShader;
 
+	Shader* RigShader;
 	Shader* MeshShader;
 	Shader* ImageBoxShader;
 	Shader* BoxShader;
@@ -144,6 +148,8 @@ public:
 	void Render(Camera& camera);
 	
 private:
+
+	void PrepareRigShader(Camera& camera);
 
 	void PrepareMeshShader(Camera& camera);
 

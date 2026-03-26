@@ -14,6 +14,18 @@
 
 
 void RenderSystem::Initialize() {
+	//FLAGS
+	glEnable(GL_DEPTH_TEST);
+	glViewport(0, 0, window->width, window->height);
+
+	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
+
 	screenfbo = new FBO();
 	skyboxVAO = new VAO();
 	skyboxVBO = new VBO();
@@ -67,17 +79,19 @@ void RenderSystem::Initialize() {
 	screenfbo->Unbind();
 	
 	shadowdepthmapfbo = new FBO();
-	const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
+	SHADOW_RESOLUTION = 4096;
 	glGenTextures(1, &depthMaptexture);
 	glBindTexture(GL_TEXTURE_2D, depthMaptexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
 	shadowdepthmapfbo->Bind();
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMaptexture, 0);
@@ -103,12 +117,12 @@ void RenderSystem::Render(Camera& camera)
 	glm::mat4 view = camera.GetViewMatrix();
 
 	float near_plane = 0.1f, far_plane = 100.0f;
-	glm::mat4 lightSpaceMatrix = glm::ortho(-80.0f, 80.0f, -80.0f, 80.0f, near_plane, far_plane) * glm::lookAt(camera.t.GetTranslation() - lighting->dirlighting.GetFrontVector() * 10.0f, camera.t.GetTranslation(), camera.t.GetUpVector());
+	glm::mat4 lightSpaceMatrix = glm::ortho(-32.0f, 32.0f, -32.0f, 32.0f, near_plane, far_plane) * glm::lookAt(camera.t.GetTranslation() - lighting->dirlighting.GetFrontVector() * 10.0f, camera.t.GetTranslation(), camera.t.GetUpVector());
 
 	//SHADOWS
 	glCullFace(GL_FRONT);
 	glEnable(GL_DEPTH_TEST);
-	glViewport(0, 0, 2048, 2048);
+	glViewport(0, 0, SHADOW_RESOLUTION, SHADOW_RESOLUTION);
 	shadowdepthmapfbo->Bind();
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glActiveTexture(GL_TEXTURE0);
@@ -168,6 +182,27 @@ void RenderSystem::Render(Camera& camera)
 
 	}
 
+	RigShader->Activate();
+
+	RigShader->SetMat4("proj", proj);
+	RigShader->SetMat4("view", view);
+	RigShader->Set3F("viewPos", camera.t.GetTranslation());
+	RigShader->SetMat4("lightSpaceMatrix", lightSpaceMatrix);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMaptexture);
+	RigShader->Set3F("dirLight.ambient", glm::vec3(0.3f));
+	RigShader->Set3F("dirLight.diffuse", glm::vec3(0.4f));
+	RigShader->Set3F("dirLight.specular", glm::vec3(0.3f));
+	RigShader->Set3F("dirLight.direction", lighting->dirlighting.GetFrontVector());
+
+	for (Renderable* r : renderables) {
+		//render opaque meshes and sort the non opaques in this loop
+		if (r->shadertype == Renderable::ShaderType::RigShader) {
+			r->Render(*RigShader);
+		}
+
+	}
+
 	//
 	PrepareParticleShader(camera);
 	for (Renderable* r : renderables) {
@@ -196,8 +231,6 @@ void RenderSystem::Render(Camera& camera)
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	//GUI
-
-
 	PrepareBoxShader(camera);
 	for (Renderable* r : renderables) {
 		if (r->shadertype == Renderable::BoxShader) {
@@ -227,6 +260,17 @@ void RenderSystem::PrepareMeshShader(Camera& camera)
 	MeshShader->SetMat4("proj", proj);
 	MeshShader->SetMat4("view", view);
 	MeshShader->Set3F("viewPos", camera.t.GetTranslation());
+}
+
+void RenderSystem::PrepareRigShader(Camera& camera) {
+	RigShader->Activate();
+
+	glm::mat4 proj = camera.GetProjectionMatrix(90.0f, 0.05f, 2000.0f);
+	glm::mat4 view = camera.GetViewMatrix();
+
+	RigShader->SetMat4("proj", proj);
+	RigShader->SetMat4("view", view);
+	RigShader->Set3F("viewPos", camera.t.GetTranslation());
 }
 
 void RenderSystem::PrepareParticleShader(Camera& camera)
@@ -261,7 +305,7 @@ Renderable::~Renderable()
 	engine->rendersystem->RemoveRenderable(this);
 }
 
-void Renderable::AddToRenderSystem()
+void Renderable::BindToRenderSystem()
 {
 	engine->rendersystem->AddRenderable(this);
 }

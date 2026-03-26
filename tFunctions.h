@@ -18,6 +18,7 @@
 struct TInTInfo {
 	glm::vec3 POI;
 	glm::vec3 CN;
+	float overlap;
 };
 
 struct AxisCollisionCN {

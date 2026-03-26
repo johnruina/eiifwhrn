@@ -454,16 +454,6 @@ public:
 			}
 		}
 	}
-	
-	virtual void Render(Shader& ShaderProgram, glm::mat4 modlmatrix) {
-		glm::mat4 topass = modlmatrix * t.GetMatrix();
-
-		ShaderProgram.Activate();
-		ShaderProgram.SetMat4("modl", topass);
-		vao.Bind();
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-		vao.Unbind();
-	};
 
 	void Render(Shader& ShaderProgram) override {
 		glm::mat4 topass = t.GetMatrix();
