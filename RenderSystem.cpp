@@ -1,3 +1,5 @@
+#include "Debug.h"
+
 #include "RenderSystem.h"
 
 #include "common.h"
@@ -11,7 +13,7 @@
 #include "Cubemap.h"
 #include "QuadVertices.h"
 #include "Lighting.h"
-
+#include "Animator.h"
 
 void RenderSystem::Initialize() {
 	//FLAGS
@@ -195,12 +197,17 @@ void RenderSystem::Render(Camera& camera)
 	RigShader->Set3F("dirLight.specular", glm::vec3(0.3f));
 	RigShader->Set3F("dirLight.direction", lighting->dirlighting.GetFrontVector());
 
+	
+
+	auto transforms = engine->testanimator->GetFinalBoneMatrices();
+	for (int i = 0; i < transforms.size(); ++i)
+		RigShader->SetMat4(("finalBonesMatrices[" + std::to_string(i) + "]").c_str(), transforms[i]);
+
 	for (Renderable* r : renderables) {
 		//render opaque meshes and sort the non opaques in this loop
 		if (r->shadertype == Renderable::ShaderType::RigShader) {
 			r->Render(*RigShader);
 		}
-
 	}
 
 	//

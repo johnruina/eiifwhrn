@@ -32,10 +32,11 @@ class SoundSystem;
 class Folder;
 class ParticleEmitter;
 class Camera;
+class Animator;
 
 class Engine {
 public:
-
+    Animator* testanimator;
 public:
     //SYSTEMS
     Physics* physicsengine;

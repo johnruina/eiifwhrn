@@ -55,6 +55,8 @@
 #include "Sound.h"
 #include "Lighting.h"
 #include "Rig.h"
+#include "Character.h"
+#include "Animator.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -120,6 +122,10 @@ Engine::Engine() {
     Rig* testrig = new Rig("assets/rig.dae");
     testrig->t.TranslateBy({0.0f,10.0f,0.0f});
     testrig->BindToRenderSystem();
+
+    Animation* testanim = new Animation("assets/testanim2.dae", testrig);
+    testanimator = new Animator(testanim);
+
     ParticleEmitter* rain = new ParticleEmitter;
     rain->t.TranslateTo({ 0.0f,10.0f,0.0f });
     rain->t.RotateToQuaternion(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)));
@@ -177,7 +183,7 @@ Engine::Engine() {
     }
     mainf->AddChild(lhf);
     Mesh* floor = CreateCubeMesh();
-    floor->t.ScaleTo({ 100.0f,0.4f,100.0f });
+    floor->t.ScaleTo({ 100.0f,2.0f,100.0f });
     floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
     floor->name = "floor";
     p* np = new p(floor);
@@ -201,6 +207,7 @@ Engine::Engine() {
 }
 
 void Engine::Initiate() {
+
     while (!glfwWindowShouldClose(window->handle))
     {
         ////////////////////////////////////START OF LOOP///////////////////////////////////
@@ -295,6 +302,8 @@ void Engine::Initiate() {
         if (keyboard->IsKeyDown('R')) {
 
         }
+
+        testanimator->UpdateAnimation(deltatime);
 
         ParticleEmitter* rain = dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"));
         rain->t.TranslateTo(camera->t.GetTranslation() + glm::vec3(0.0f,10.0f,0.0f));

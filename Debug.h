@@ -89,6 +89,12 @@ inline void Output(BoundingBox tooutput) {
     std::cout << tooutput.min.x << ' ' << tooutput.min.y << ' ' << tooutput.min.z << ' ' << tooutput.max.x << ' ' << tooutput.max.y << ' ' << tooutput.max.z << '\n';
 }
 
+inline void Output(glm::mat4 tooutput) {
+    std::cout << '[' << tooutput[0][0] << ',' << tooutput[0][1] << ',' << tooutput[0][2] << ',' << tooutput[0][3] << ',' << '\n'
+        << tooutput[1][0] << ',' << tooutput[1][1] << ',' << tooutput[1][2] << ',' << tooutput[1][3] << ',' << '\n'
+        << tooutput[2][0] << ',' << tooutput[2][1] << ',' << tooutput[2][2] << ',' << tooutput[2][3] << ',' << '\n'
+        << tooutput[3][0] << ',' << tooutput[3][1] << ',' << tooutput[3][2] << ',' << tooutput[3][3] << ',' << '\n' << ']' << '\n';
+}
 
 inline Mesh* CreateCubeMesh() {
     return new Mesh(CUBEVERTICES, CUBEINDICES);

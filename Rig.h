@@ -137,7 +137,7 @@ public:
         glm::mat4 translation = InterpolatePosition(animationTime);
         glm::mat4 rotation = InterpolateRotation(animationTime);
         glm::mat4 scale = InterpolateScaling(animationTime);
-        m_LocalTransform = translation * rotation * scale;
+		m_LocalTransform = translation * rotation;// *scale;
     }
 
     glm::mat4 GetLocalTransform() { return m_LocalTransform; }
@@ -283,8 +283,8 @@ public:
 
 		}
 		else {
-
 			vao.Bind();
+			ebo.Bind();
 			vbo.BufferData(&vertices[0], vertices.size() * sizeof(RigVertex));
 			ebo.BufferData(&indices[0], indices.size() * sizeof(GLuint));
 
@@ -294,13 +294,13 @@ public:
 			vao.LinkVBO(vbo, 0, 3, GL_FLOAT, sizeof(RigVertex), (void*)0);
 			vao.LinkVBO(vbo, 1, 3, GL_FLOAT, sizeof(RigVertex), (void*)offsetof(RigVertex, Normal));
 			vao.LinkVBO(vbo, 2, 2, GL_FLOAT, sizeof(RigVertex), (void*)offsetof(RigVertex, TexCoords));
+			vbo.Bind();
 			glEnableVertexAttribArray(3);
 			glVertexAttribIPointer(3, 4, GL_INT, sizeof(RigVertex), (void*)offsetof(RigVertex, m_BoneIDs));
 
-			// weights
 			glEnableVertexAttribArray(4);
-			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(RigVertex),
-				(void*)offsetof(RigVertex, m_Weights));
+			glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(RigVertex), (void*)offsetof(RigVertex, m_Weights));
+
 			vao.Unbind();
 			vbo.Unbind();
 			ebo.Unbind();
@@ -511,6 +511,7 @@ public:
 
 	void Render(Shader& shader) override {
 		shader.Activate();
+
 		glm::mat4 rigmat = t.GetMatrix();
 		for (auto p : meshes) {
 			p->Render(shader, rigmat);
@@ -552,7 +553,7 @@ private:
 	{
 		std::vector<RigVertex> vertices;
 		std::vector<unsigned int> indices;
-
+		
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
 			RigVertex vertex;
