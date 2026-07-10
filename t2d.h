@@ -25,10 +25,10 @@ public:
     glm::vec2 NormalizedCenterPos;
     glm::vec2 NormalizedCenterScale;
 
-    void Recalculate(int& width,int& height) {
+    void Recalculate() {
         //WRITE SETTING FUNCTIONS THAT CALL THIS INSTEAD OF CALLING EVERY FRAME
-        float fheight = (float)height;
-        float fwidth = (float)width;
+        float fheight = (float)window->height;
+        float fwidth = (float)window->width;
 
         pixelsize = {size.z + size.x * fwidth, size.w + size.y * fheight };
         pixelposition = { position.z + position.x * fwidth - center.x * pixelsize.x, position.w + position.y * fheight - center.y * pixelsize.y};

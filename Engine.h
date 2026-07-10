@@ -37,6 +37,7 @@ class Animator;
 class Engine {
 public:
     Animator* testanimator;
+    Animator* testanimator2;
 public:
     //SYSTEMS
     Physics* physicsengine;

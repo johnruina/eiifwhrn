@@ -158,6 +158,8 @@ private:
 	void PrepareBoxShader(Camera& camera);
 
 	void PrepareImageBoxShader(Camera& camera);
+
+	void PrepareTextShader(Camera& camera);
 public:
 	std::vector<Renderable*> renderables;
 	

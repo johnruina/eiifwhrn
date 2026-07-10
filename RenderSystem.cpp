@@ -183,7 +183,7 @@ void RenderSystem::Render(Camera& camera)
 		}
 
 	}
-
+	
 	RigShader->Activate();
 
 	RigShader->SetMat4("proj", proj);
@@ -196,15 +196,18 @@ void RenderSystem::Render(Camera& camera)
 	RigShader->Set3F("dirLight.diffuse", glm::vec3(0.4f));
 	RigShader->Set3F("dirLight.specular", glm::vec3(0.3f));
 	RigShader->Set3F("dirLight.direction", lighting->dirlighting.GetFrontVector());
-
 	
 
-	auto transforms = engine->testanimator->GetFinalBoneMatrices();
-	for (int i = 0; i < transforms.size(); ++i)
-		RigShader->SetMat4(("finalBonesMatrices[" + std::to_string(i) + "]").c_str(), transforms[i]);
+	std::vector<glm::mat4> transforms = engine->testanimator->GetFinalBoneMatrices();
+	std::vector<glm::mat4> transforms2 = engine->testanimator2->GetFinalBoneMatrices();
+
+	for (int i = 0; i < transforms.size(); i++)
+		RigShader->SetMat4(("finalBonesMatrices[" + std::to_string(i) + "]").c_str(), glm::mat4(1.0f));
+	for (int i = 0; i < transforms.size(); i++) {
+		RigShader->SetMat4(("finalBonesMatrices[" + std::to_string(i) + "]").c_str(), transforms2[i]);
+	}
 
 	for (Renderable* r : renderables) {
-		//render opaque meshes and sort the non opaques in this loop
 		if (r->shadertype == Renderable::ShaderType::RigShader) {
 			r->Render(*RigShader);
 		}
@@ -252,6 +255,12 @@ void RenderSystem::Render(Camera& camera)
 		}
 	}
 
+	PrepareTextShader(camera);
+	for (Renderable* r : renderables) {
+		if (r->shadertype == Renderable::TextShader) {
+			r->Render(*Text2DShader);
+		}
+	}
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glfwSwapBuffers(window->handle);
@@ -301,6 +310,13 @@ void RenderSystem::PrepareImageBoxShader(Camera& camera)
 {
 	ImageBoxShader->Activate();
 	ImageBoxShader->Set2F("screenSize", { window->width ,window->height });
+}
+
+void RenderSystem::PrepareTextShader(Camera& camera)
+{
+
+	Text2DShader->Activate();
+	Text2DShader->Set2F("screenSize", { window->width, window->height });
 }
 
 Renderable::Renderable()

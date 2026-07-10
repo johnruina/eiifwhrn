@@ -106,6 +106,7 @@ int main() {
     delete window;
     delete mouse;
     delete keyboard;
+    delete engine;
     glfwTerminate();
     return 0;
 }

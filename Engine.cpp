@@ -56,6 +56,8 @@
 #include "Lighting.h"
 #include "Rig.h"
 #include "Character.h"
+#include "DefaultBodyComponents.h"
+#include "BodyComponentActions.h"
 #include "Animator.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -103,6 +105,9 @@ Engine::Engine() {
 
     camera = new Camera();
     camera->t.TranslateTo({ 0.0f,5.0f,0.0f });
+}
+
+void Engine::Initiate() {
 
     //FONTS
     std::vector<Font> fonts;
@@ -110,21 +115,35 @@ Engine::Engine() {
     std::string arialdirectory = "assets/ft/arial.ttf";
     Font* arial = new Font(arialdirectory.c_str());
 
-    //EVENTUALLY CONVERGE INTO ONE FOLDER
-
-    //logic and shit
-
-    unsigned long int frame = 0;
-    unsigned long prev = 0;
-
     //STUFF
+    std::vector<Character*> chars = {};
 
+    Character* testcharacter = new Character();
     Rig* testrig = new Rig("assets/rig.dae");
-    testrig->t.TranslateBy({0.0f,10.0f,0.0f});
-    testrig->BindToRenderSystem();
-
-    Animation* testanim = new Animation("assets/testanim2.dae", testrig);
-    testanimator = new Animator(testanim);
+    testcharacter->body->rig = testrig;
+    testcharacter->name = "character";
+    testcharacter->BindToRenderSystem();
+    mainf->AddChild(testcharacter);
+    chars.push_back(testcharacter);
+    
+    Character* testcharacter2 = new Character();
+    Rig* testrig2 = new Rig("assets/rig.dae");
+    testcharacter2->body->rig = testrig2;
+    testcharacter2->name = "character";
+    testcharacter2->BindToRenderSystem();
+    mainf->AddChild(testcharacter2);
+    testcharacter2->body->t.TranslateBy({ 10.0f,10.0f,5.0f });
+    testcharacter2->body->components = GenerateDefaultBody();
+    testcharacter2->body->RootComponent = testcharacter2->body->components[0];
+    Action* testaction = new Action();
+    testaction->Name = "Step";
+    testaction->FunctionPointer = Footstep;
+    testcharacter2->body->GetComponentOfName("RightLeg")->Actions.push_back(testaction);
+    chars.push_back(testcharacter2);
+    Animation* testanimation = new Animation("assets/testanim2.dae",testrig2);
+    testanimator = new Animator(testanimation);
+    Animation* testanimation2 = new Animation("assets/walkanim.dae", testrig2);
+    testanimator2 = new Animator(testanimation2);
 
     ParticleEmitter* rain = new ParticleEmitter;
     rain->t.TranslateTo({ 0.0f,10.0f,0.0f });
@@ -140,10 +159,10 @@ Engine::Engine() {
     rain->name = "rain";
     rain->BindToRenderSystem();
     mainf->AddChild(rain);
-    
+
     Sound* music = new Sound();
     music->LoadSoundData(resourcemanager->LoadSoundData(L"assets/fs.wav"));
-    music->Update3DPosition(0.0f,0.0f,0.0f);
+    music->Update3DPosition(0.0f, 0.0f, 0.0f);
     music->PlayTrack();
     music->name = "music";
     mainf->AddChild(music);
@@ -154,6 +173,17 @@ Engine::Engine() {
     crosshair->t2d.position = { 0.5f,0.5f,0.0f,0.0f };
     crosshair->t2d.size = { 0.0f,0.0f,4.0f,4.0f };
     crosshair->BindToRenderSystem();
+
+    TextBox* tb = new TextBox();
+    tb->font = arial;
+    tb->text = " GRAHHHHH";
+    tb->fontsize = 0.5f;
+    tb->Color = {0.0f,0.0f,0.0f};
+    tb->t2d.position = { 0.5f,0.45f,0.0f,0.0f};
+    tb->t2d.center = {0.0f,0.0f};
+    tb->textCenter = {0.0f,0.5f};
+    tb->t2d.size = { 0.2f, 0.1f, 0.0f, 0.0f };
+    tb->BindToRenderSystem();
 
     ImageBox* testgui = new ImageBox();
     testgui->t2d.center = { 0.0f,1.0f };
@@ -169,22 +199,20 @@ Engine::Engine() {
 
     Texture* snowflake = new Texture("assets/snowflake.png");
     rain->tex = snowflake;
-    
+
     Model leiheng("assets/test.obj");
     leiheng.t.ScaleTo({ 1.0f,1.0f,1.0f });
-    Folder* lhf = new Folder();
-    lhf->name = "leihengfolder";
     for (Mesh* mesh : leiheng.meshes) {
         auto newmesh = mesh->Clone();
         newmesh->t.TranslateBy({ 4.0f,4.0f,4.0f });
         //newmesh->t.RotateByEulerAngles({0.0f,0.0f,glm::radians(90.0f)});
-        lhf->AddChild(newmesh);
+        newmesh->name = "SPHERE";
+        mainf->AddChild(newmesh);
         newmesh->BindToRenderSystem();
     }
-    mainf->AddChild(lhf);
     Mesh* floor = CreateCubeMesh();
     floor->t.ScaleTo({ 100.0f,2.0f,100.0f });
-    floor->t.TranslateTo({ 0.0f,1.0f,0.0f });
+    floor->t.TranslateTo({ 0.0f,0.0f,0.0f });
     floor->name = "floor";
     p* np = new p(floor);
     floor->BindToRenderSystem();
@@ -203,10 +231,7 @@ Engine::Engine() {
     cube2->t.TranslateTo({ 10.0f,4.0f,10.5f });
     cube2->name = "cubee";
     cube2->BindToRenderSystem();
-    mainf->AddChild(cube);
-}
-
-void Engine::Initiate() {
+    mainf->AddChild(cube2);
 
     while (!glfwWindowShouldClose(window->handle))
     {
@@ -241,8 +266,6 @@ void Engine::Initiate() {
         */
         while (Keyboard::Event buffer = keyboard->ReadKey()) {
             if (buffer.GetCode() == 'F' and buffer.IsPress()) {
-                Model* newcube = new Model("cratelookingthing.obj");
-                newcube->t.TranslateTo(camera->t.GetTranslation());
             }
             /*
             else  if (buffer.GetCode() == 'Z' and buffer.IsPress()) {
@@ -268,6 +291,7 @@ void Engine::Initiate() {
                 nc->t.TranslateTo(camera->t.GetTranslation());
                 nc->t.RotateByEulerAngles({0.0f,0.0f,0.0f});
                 nc->BindToRenderSystem();
+                nc->name = "cube!";
                 mainf->AddChild(nc);
                 p* np = new p(nc);
                 physicsengine->AddObject(np);
@@ -275,7 +299,7 @@ void Engine::Initiate() {
             }
         }
 
-
+        //////////////////////////////////// SAFE ZONE ////////////////////////////////////
         if (keyboard->IsKeyDown(GLFW_KEY_ESCAPE)) {
             glfwSetWindowShouldClose(window->handle, 1);
         }
@@ -284,13 +308,13 @@ void Engine::Initiate() {
             camera->t.TranslateBy(camera->speed * camera->t.GetFrontVector());
         }
         if (keyboard->IsKeyDown('S')) {
-            camera->t.TranslateBy(-(camera->speed * camera->t.GetFrontVector()));
+            camera->t.TranslateBy(-camera->speed * camera->t.GetFrontVector());
         }
         if (keyboard->IsKeyDown('A')) {
             camera->t.TranslateBy(camera->speed * camera->t.GetRightVector());
         }
         if (keyboard->IsKeyDown('D')) {
-            camera->t.TranslateBy(-(camera->speed * camera->t.GetRightVector()));
+            camera->t.TranslateBy(-camera->speed * camera->t.GetRightVector());
         }
         if (keyboard->IsKeyDown(GLFW_KEY_LEFT_SHIFT)) {
             camera->speed *= 1.005;
@@ -302,10 +326,32 @@ void Engine::Initiate() {
         if (keyboard->IsKeyDown('R')) {
 
         }
+        tb->text = "";
+        Object* closestobj = nullptr;
+        float squareddistance= FLT_MAX;
+        for (Object* obj : mainf->GetChildren()) {
+            if (t_package* tobj = dynamic_cast<t_package*>(obj)) {
+                auto col = IsRayInT({ camera->t.GetTranslation(),camera->t.GetFrontVector() * 10.0f }, tobj->t);
+                if (col.has_value()) {
+                    auto value = col.value();
+                    float dist = value.x * value.x + value.y * value.y + value.z * value.z;
+                    if (dist < squareddistance) {
+                        squareddistance = dist;
+                        closestobj = obj;
+                    }
+                }
+            }
+        }
 
+        tb->text = ((closestobj == nullptr)? "": closestobj->name);
+
+        InputAction* walk = new InputAction();
+        walk->ActionName = "Step";
+        walk->BodyComponentName = "RightLeg";
+        testcharacter2->body->ExecuteAction(walk);
         testanimator->UpdateAnimation(deltatime);
+        testanimator2->UpdateAnimation(deltatime);
 
-        ParticleEmitter* rain = dynamic_cast<ParticleEmitter*>(mainf->GetFirstChildOfName("rain"));
         rain->t.TranslateTo(camera->t.GetTranslation() + glm::vec3(0.0f,10.0f,0.0f));
         for (int i = 0; i < 35; i++) {
             rain->Emit();
@@ -314,9 +360,11 @@ void Engine::Initiate() {
 
         unsigned int onceeveryframes = 1;
         if (frame % onceeveryframes == 0) {
-
+            
         }
         
+
+
         soundsystem->listener.Position.x = camera->t.GetTranslation().x;
         soundsystem->listener.Position.y = camera->t.GetTranslation().y;
         soundsystem->listener.Position.z = camera->t.GetTranslation().z;
@@ -324,12 +372,11 @@ void Engine::Initiate() {
         soundsystem->listener.OrientFront.y = camera->t.GetFrontVector().y;
         soundsystem->listener.OrientFront.z = -camera->t.GetFrontVector().z;
 
-        Sound* music = dynamic_cast<Sound*>(mainf->GetFirstChildOfName("music"));
-        Mesh* cube = dynamic_cast<Mesh*>(mainf->GetFirstChildOfName("cube"));
+        Sound* music = static_cast<Sound*>(mainf->GetFirstChildOfName("music"));
+        Mesh* cube = static_cast<Mesh*>(mainf->GetFirstChildOfName("cube"));
         music->Update3DPosition(cube->t.GetTranslation().x, cube->t.GetTranslation().y, cube->t.GetTranslation().z);
         soundsystem->Recalculate(music->GetEmitter(), music->GetSourceVoice());
         physicsengine->Step(deltatime);
-
         ////////////////////////////////////RENDER SCENE////////////////////////////////////
         rendersystem->Render(*camera);
         ////////////////////////////////////END OF FRAME////////////////////////////////////

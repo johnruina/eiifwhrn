@@ -52,7 +52,7 @@ public:
 	void InitializeMesh(const std::vector<Vertex>& meshvertices, const std::vector<GLuint>& meshindices) {
 		vertices = meshvertices;
 		indices = meshindices;
-		this->shadertype = MeshShader;
+		this->shadertype = ShaderType::MeshShader;
 		GenerateRenderData();
 		NormalizeVertices();
 		UpdateVertices();

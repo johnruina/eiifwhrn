@@ -26,6 +26,7 @@ void main()
     vec4 totalPosition = vec4(0.0);
     vec3 totalNormal = vec3(0.0);
 
+    int bonescontributed = 0;
     for(int i = 0; i < MAX_BONE_INFLUENCE; i++)
     {
         if(boneIds[i] == -1) continue;
@@ -35,10 +36,10 @@ void main()
             totalNormal = norm;
             break;
         }
+        bonescontributed ++;
         totalPosition += (finalBonesMatrices[boneIds[i]] * vec4(pos, 1.0))* weights[i];
         totalNormal   += mat3(finalBonesMatrices[boneIds[i]]) * norm * weights[i];
     }
-
     FragPos          = vec3(modl * totalPosition);
     fragposlightspace = lightSpaceMatrix * vec4(FragPos, 1.0);
     gl_Position      = proj * view * modl * totalPosition;

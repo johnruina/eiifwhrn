@@ -2,43 +2,58 @@
 #define CHARACTER_CLASS
 
 #include <vector>
-
+#include <string>
+#include <functional>
 #include "t.h"
 #include "Rig.h"
 #include "Object.h"
 
-class Component {
-	
+// Forward declarations
+class CharacterBody;
+class BodyComponent;
+
+class Action {
+public:
+    std::string Name;
+    std::function<void(CharacterBody*, BodyComponent*)> FunctionPointer;
+};
+
+class InputAction {
+public:
+    std::string BodyComponentName;
+    std::string ActionName;
+};
+
+class BodyComponent {
+public:
+    std::string name;
+    float integrity = 1.0f;
+    BodyComponent* ParentComponent;
+    std::vector<Action*> Actions;
 };
 
 class CharacterBody : public t_package {
 public:
-	Rig* rig;
-private:
+    Rig* rig;
+    std::vector<BodyComponent*> components;
+    BodyComponent* RootComponent;
 
-};	
-
-class CharacterMind {
-
+    BodyComponent* GetComponentOfName(std::string name);
+    void ExecuteAction(InputAction* action);
 };
 
-class Character: public Object, public Renderable {
+class CharacterMind {
 public:
-	CharacterMind* mind;
-	CharacterBody* body;
+    InputAction* ProduceAction();
+};
 
-	Character() {
-		body = new CharacterBody();
-		mind = nullptr;
-		shadertype = ShaderType::RigShader;
-	}
+class Character : public Object, public Renderable {
+public:
+    CharacterMind* mind;
+    CharacterBody* body;
 
-	void Render(Shader& shader) override {
-		body->rig->Render(shader,body->t.GetMatrix());
-	}
-
-private:
-
+    Character();
+    void Render(Shader& shader) override;
 };
 
 #endif

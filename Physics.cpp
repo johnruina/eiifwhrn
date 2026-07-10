@@ -33,7 +33,7 @@ void Physics::Resolve(Collision* c)
     glm::vec3 relativecolb = c->POI - b->pointer->t.GetTranslation();
 
     constexpr float onedividedbytwelve = 0.08333333333f;
-    constexpr float restitution = 0.4f;
+    constexpr float restitution = 0.2f;
 
     // Inertia tensor A
     glm::vec3 sqa = a->pointer->t.GetScale() * a->pointer->t.GetScale();

@@ -1,6 +1,8 @@
 #ifndef SOUND_SYSTEM_CLASS
 #define SOUND_SYSTEM_CLASS
 
+#define NOMINMAX
+
 #include <Windows.h>
 #include <wrl.h>
 #include <xaudio2.h>

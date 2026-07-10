@@ -13,18 +13,6 @@ struct Material {
     float shininess;
 };
 
-struct PointLight {    
-    vec3 position;
-    
-    float constant;
-    float linear;
-    float quadratic;  
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};  
-
 struct DirLight {
     vec3 direction;
   
@@ -81,9 +69,8 @@ void main()
     vec3 norm = normalize(normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 
-    vec4 pregamma = (lightless) * vec4(CalcDirLight(dirLight,norm,viewDir),1.0f) * vec4(vec3(1.0f-1.0f/gl_FragCoord[3]/ 200.0f), 1.0f);
+    vec4 light = (lightless) * vec4(CalcDirLight(dirLight,norm,viewDir),1.0f) * vec4(vec3(1.0f-1.0f/gl_FragCoord[3]/ 200.0f), 1.0f);
 
-    FragColor = vec4(pow(pregamma.rgb, vec3(1.0/gamma)), pregamma.a);
-
+    FragColor = light;
     //FragColor = vec4(1.0f,1.0f,1.0f,1.0f);
 }

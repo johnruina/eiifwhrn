@@ -44,9 +44,10 @@ public:
     }
 
     virtual void Render(Shader& ShaderProgram) override {
+        if (Opacity <= 0.0f) return;
         ShaderProgram.Activate();
         //UNIFORMS
-        t2d.Recalculate(window->width,window->height);
+        t2d.Recalculate();
         ShaderProgram.Set4F("Color", { Color,Opacity });
         ShaderProgram.Set2F("normalizedCenterScale", t2d.NormalizedCenterScale);
         ShaderProgram.Set2F("normalizedCenterPos", t2d.NormalizedCenterPos);
@@ -85,87 +86,75 @@ public:
 };
 
 class TextBox : public Box {
-//FAIRLY WIP, UNUSABLE AS OF CURRENT STATE
 public:
-
-    Font* font;
+    Font* font = nullptr;
     std::string text;
-
-    float fontsize = 32.0f;
-
-    void RenderText(Shader& ShaderProgram, int& screenWidth, int& screenHeight) {
-
-        ShaderProgram.Activate();
-        glActiveTexture(GL_TEXTURE0);
-        font->vao.Bind();
-
-        // iterate through all characters
-
-        float x = t2d.pixelposition.x;
-        float y = t2d.pixelposition.y;
-
-        std::string::const_iterator c;
-        for (c = text.begin(); c != text.end(); c++)
-        {
-            Character ch = font->Characters[*c];
-
-            float xpos = x + ch.Bearing.x * fontsize;
-            float ypos = y - (ch.Size.y - ch.Bearing.y) * fontsize;
-
-            float w = ch.Size.x * fontsize;
-            float h = ch.Size.y * fontsize;
-            // update VBO for each character
-            float vertices[6][4] = {
-                { xpos,     ypos + h,   0.0f, 0.0f },
-                { xpos,     ypos,       0.0f, 1.0f },
-                { xpos + w, ypos,       1.0f, 1.0f },
-
-                { xpos,     ypos + h,   0.0f, 0.0f },
-                { xpos + w, ypos,       1.0f, 1.0f },
-                { xpos + w, ypos + h,   1.0f, 0.0f }
-            };
-            // render glyph texture over quad
-            glBindTexture(GL_TEXTURE_2D, ch.TextureID);
-            // update content of VBO memory
-            font->vbo.Bind();
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-            // render quad
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-            x += (ch.Advance >> 6) * fontsize; // bitshift by 6 to get value in pixels (2^6 = 64)
-        }
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    virtual void Render(Shader& ShaderProgram) override {
-        ShaderProgram.Activate();
-        //UNIFORMS
-        t2d.Recalculate(window->width, window->height);
-        ShaderProgram.Set4F("Color", { Color,Opacity });
-        ShaderProgram.Set2F("normalizedCenterScale", t2d.NormalizedCenterScale);
-        ShaderProgram.Set2F("normalizedCenterPos", t2d.NormalizedCenterPos);
-        ShaderProgram.Set1F("z", z);
-        ShaderProgram.Set1F("rotation", rotation);
-        ShaderProgram.Set2F("pixelScale", t2d.pixelsize);
-        ShaderProgram.Set2F("pixelPos", t2d.pixelposition);
-        ShaderProgram.Set1F("rounding", rounding);
-
-        //render
-        boxVAO.Bind();
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        boxVAO.Unbind();
-
-
-    }
+    float fontsize = 1.0f;
+    glm::vec2 textCenter = { 0.0f, 0.0f }; // 0,0 = top-left, 0.5,0.5 = center, 1,1 = bottom-right
 
     TextBox() {
         shadertype = ShaderType::TextShader;
     }
 
-};
+    virtual void Render(Shader& ShaderProgram) override {
+        if (!font or Opacity <= 0.0f) return;
+        t2d.Recalculate();
+        // Calculate total text width and height for centering
+        float totalWidth = 0.0f;
+        float maxHeight = 0.0f;
+        for (const char& c : text) {
+            TextCharacter ch = font->Characters[(unsigned char)c];
+            totalWidth += (ch.Advance >> 6) * fontsize;
+            maxHeight = glm::max(maxHeight, (float)ch.Size.y * fontsize);
+        }
 
+        float x = t2d.pixelposition.x + (t2d.pixelsize.x - totalWidth) * textCenter.x;
+        float y = t2d.pixelposition.y + (t2d.pixelsize.y - maxHeight) * textCenter.y;
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        ShaderProgram.Activate();
+        ShaderProgram.Set4F("textColor", { Color, Opacity });
+        ShaderProgram.Set2F("screenSize", glm::vec2(window->width, window->height));
+        ShaderProgram.SetInt("text", 0);
+        glActiveTexture(GL_TEXTURE0);
+        font->vao.Bind();
+
+        for (const char& c : text) {
+            TextCharacter ch = font->Characters[(unsigned char)c];
+            if (ch.Size.x == 0 || ch.Size.y == 0) {
+                x += (ch.Advance >> 6) * fontsize;
+                continue;
+            }
+
+            float x0 = x + ch.Bearing.x * fontsize;
+            float y0 = y + (ch.Size.y - ch.Bearing.y) * fontsize;
+            float x1 = x0 + ch.Size.x * fontsize;
+            float y1 = y0 - ch.Size.y * fontsize;
+
+            float vertices[6][4] = {
+                { x0, y1, 0.0f, 0.0f },
+                { x0, y0, 0.0f, 1.0f },
+                { x1, y0, 1.0f, 1.0f },
+                { x0, y1, 0.0f, 0.0f },
+                { x1, y0, 1.0f, 1.0f },
+                { x1, y1, 1.0f, 0.0f }
+            };
+
+            glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+            font->vbo.Bind();
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+            font->vbo.Unbind();
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            x += (ch.Advance >> 6) * fontsize;
+        }
+
+        font->vao.Unbind();
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+};
 class ImageBox : public Box {
 public:
     Texture* tex;
@@ -174,10 +163,12 @@ public:
     }
 
     virtual void Render(Shader& ShaderProgram) override {
+        if (Opacity <= 0.0f) return;
+
         ShaderProgram.Activate();
         //UNIFORMS
 
-        t2d.Recalculate(window->width,window->height);
+        t2d.Recalculate();
         ShaderProgram.Set4F("Color", { Color,Opacity });
         ShaderProgram.Set2F("normalizedCenterScale", t2d.NormalizedCenterScale);
         ShaderProgram.Set2F("normalizedCenterPos", t2d.NormalizedCenterPos);

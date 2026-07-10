@@ -39,7 +39,8 @@ float VolumeOfTriangle(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3);
 std::optional<glm::vec3> RayIntersectsTriangle(const Ray& ray,
 	const Triangle triangle);
 
-std::optional<glm::vec3> IsRayInT(const Ray& ray, t t);
+std::optional<glm::vec3> IsRayInT(const Ray& ray, t& t);
+bool IsRayInTBool(const Ray& ray, t& t);
 
 bool BoundingBoxInBoundingBox(const BoundingBox bb1, const BoundingBox bb2);
 bool BoundingAxisInBoundingAxis(BoundingAxis ba1, BoundingAxis ba2);
